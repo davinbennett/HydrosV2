@@ -9,7 +9,7 @@ import (
 func AuthRoute(rg *gin.RouterGroup) {
 	auth := rg.Group("/auth") 
 	{
-		auth.POST("/login-google", controllers.LoginWithGoogle)
-		// auth.POST("/login-google", controllers.LoginEmail)
+		auth.POST("/login-goofgle", controllers.LoginWithGoogle)
+		auth.POST("/login-email", controllers.LoginWithEmail)
 	}
 }
