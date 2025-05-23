@@ -1,15 +1,25 @@
 package main
 
 import (
-    // "fmt"
-    "github.com/gin-gonic/gin"
-    "main/config"
-    "log"
-    "main/models"
-    "main/routes"
+	// "fmt"
+	"log"
+	"main/config"
+	"main/models"
+	"main/routes"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+    if err := godotenv.Load(".env"); err != nil {
+        log.Fatalf("Env connection failed: %v", err)
+    }
+
+    if err := config.ConnectRedis(); err != nil {
+        log.Fatalf("Redis connection failed: %v", err)
+    }
+
     if err := config.ConnectPostgres(); err != nil {
         log.Fatalf("Database connection failed: %v", err)
     }

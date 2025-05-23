@@ -5,13 +5,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 )
 
 func GenerateJWT(userID uint, email string) (string, error) {
-
-	godotenv.Load(".env")
-
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"email":   email,
