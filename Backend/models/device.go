@@ -20,7 +20,6 @@ type Device struct {
 	Users            []User `gorm:"many2many:user_devices"`
 	PumpLogs         []PumpLog
 	Alarms           []Alarm
-	SensorRaws       []SensorRaw
 	SensorAggregates []SensorAggregate
 	CreatedAt        time.Time
 	UpdatedAt        time.Time

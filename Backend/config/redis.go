@@ -6,17 +6,12 @@ import (
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/joho/godotenv"
 )
 
 var RedisClient *redis.Client
 var RedisCtx = context.Background()
 
 func ConnectRedis() error{
-	if err := godotenv.Load(".env"); err != nil {
-		return fmt.Errorf("error loading .env file: %w", err)
-	}
-
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("REDIS_ADDR"),
 		Password: "",                      

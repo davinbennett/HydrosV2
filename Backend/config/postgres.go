@@ -8,17 +8,11 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"github.com/joho/godotenv"
 )
 
 var PostgresDB *gorm.DB
 
 func ConnectPostgres() error {
-	if err := godotenv.Load(".env"); err != nil {
-		return fmt.Errorf("error loading .env file: %w", err)
-	}
-
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta",
 		os.Getenv("POSTGRES_HOST"),
