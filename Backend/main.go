@@ -23,9 +23,9 @@ func main() {
 		log.Fatalf("Env connection failed: %v", err)
 	}
 
-	if err := config.ConnectRedis(); err != nil {
-		log.Fatalf("Redis connection failed: %v", err)
-	}
+	// if err := config.ConnectRedis(); err != nil {
+	// 	log.Fatalf("Redis connection failed: %v", err)
+	// }
 
 	if err := config.ConnectPostgres(); err != nil {
 		log.Fatalf("Postgres connection failed: %v", err)

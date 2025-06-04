@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"main/config"
-	"main/repositories"
 	"main/infrastructure/mqtt"
+	"main/infrastructure/weather"
+	"main/repositories"
 )
 
 func ControlPump(deviceID string, isOn bool) error {
@@ -34,4 +35,22 @@ func ControlPump(deviceID string, isOn bool) error {
 	}
 
 	return nil
+}
+
+func GetLocation(deviceID string) (string, error) {
+	return repositories.GetLocation(deviceID)
+}
+
+func GetWeatherStatus(deviceID string) (string, error) {
+	long, lat, err := repositories.GetCoords(deviceID)
+	if err != nil {
+		return "", err
+	}
+
+	weatherStatus, err := weather.GetWeatherByCoords(long, lat)
+	if err != nil {
+		return "", err
+	}
+
+	return weatherStatus, nil
 }

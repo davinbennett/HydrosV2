@@ -11,8 +11,9 @@ type Device struct {
 	IsOn             bool    `gorm:"default:false"`
 	Latitude         float64 `gorm:"type:numeric(9,6);default:0.000000"`
 	Longitude        float64 `gorm:"type:numeric(9,6);default:0.000000"`
-	ProgressPlan     int     `gorm:"default:0"`
-	ProgressNow      int     `gorm:"default:0"`
+	Location         string
+	ProgressPlan     int `gorm:"default:0"`
+	ProgressNow      int `gorm:"default:0"`
 	Code             *string
 	PlantName        *string
 	IsActiveSoil     bool   `gorm:"default:false"`

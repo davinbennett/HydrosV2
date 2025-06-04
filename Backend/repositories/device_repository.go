@@ -29,3 +29,19 @@ func UpdatePumpStatus(deviceID string, isOn bool) error {
 	device.IsOn = isOn
 	return config.PostgresDB.Save(&device).Error
 }
+
+func GetLocation(deviceID string) (string, error) {
+	var device models.Device
+	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
+		return "", err
+	}
+	return device.Location, nil
+}
+
+func GetCoords(deviceID string) (float64, float64, error) {
+	var device models.Device
+	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
+		return 0.0, 0.0, err
+	}
+	return device.Longitude, device.Latitude, nil
+}
