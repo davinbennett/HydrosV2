@@ -32,7 +32,6 @@ func JWTMiddleware() gin.HandlerFunc {
 			if errors.Is(err, jwt.ErrTokenExpired) {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has expired"})
 			} else {
-				fmt.Println("tessss")
 				c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			}
 			c.Abort()
@@ -45,6 +44,9 @@ func JWTMiddleware() gin.HandlerFunc {
 			}
 			if email, ok := claims["email"].(string); ok {
 				c.Set("email", email)
+			}
+			if userID, ok := claims["user_id"].(string); ok {
+				c.Set("user_id", userID)
 			}
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})

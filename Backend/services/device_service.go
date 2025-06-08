@@ -54,3 +54,38 @@ func GetWeatherStatus(deviceID string) (string, error) {
 
 	return weatherStatus, nil
 }
+
+func AddPlantInfo(deviceID, plantName string, progressPlan int, lat, long float64, location string) error {
+	return repositories.AddPlant(deviceID, plantName, progressPlan, lat, long, location)
+}
+
+func GetPlantInfo(deviceID string) (string, int, int, error) {
+	plantName, progressNow, progressPlan, err := repositories.GetPlantInfo(deviceID)
+	if err != nil {
+		return "", 0, 0, err
+	}
+
+	return plantName, progressNow, progressPlan, nil
+}
+
+func UpdatePlant(deviceID string, plantName, location string, progressPlan int, latitude, longitude float64) error {
+	return repositories.UpdatePlant(deviceID, plantName, location, progressPlan, latitude, longitude)
+}
+
+func PairDevice(userID uint, code string) (uint, error) {
+	device, err := repositories.FindDeviceByCode(code)
+	if err != nil {
+		return 0, fmt.Errorf("device not found")
+	}
+
+	err = repositories.AddDeviceToUser(userID, device.ID)
+	if err != nil {
+		return 0, err
+	}
+
+	return device.ID, nil
+}
+
+func UnpairDevice(userID uint, deviceID uint) error {
+	return repositories.UnpairDevice(userID, deviceID)
+}

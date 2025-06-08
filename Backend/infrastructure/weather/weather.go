@@ -27,21 +27,21 @@ func GetWeatherByCoords(lat, long float64) (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", fmt.Errorf("failed to make HTTP request: %w", err)
+		return "", nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("non-OK HTTP status: %s", resp.Status)
+		return "", nil
 	}
 
 	var result WeatherAPIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("failed to decode weather API response: %w", err)
+		return "", nil
 	}
 
 	if len(result.Weather) == 0 {
-		return "", fmt.Errorf("weather data not found in API response")
+		return "", nil
 	}
 
 	return result.Weather[0].Description, nil

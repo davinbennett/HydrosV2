@@ -13,6 +13,7 @@ func InitRoutes(r *gin.Engine) {
 
 		// ! SEMENTARA
 		DeviceRoute(route)
+		PumpLogRoute(route)
 
 		protected := route.Group("/")
 		protected.Use(middleware.JWTMiddleware())
