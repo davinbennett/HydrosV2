@@ -19,7 +19,7 @@ func InitMQTTClient() mqtt.Client {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("[MQTT] Connection error: %v", token.Error())
 	}
-	log.Println("[MQTT] Connected to MQTT broker")
+	log.Println("✅ [MQTT] Connected to MQTT broker")
 
 	MQTTClient = client
 	return client

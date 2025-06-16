@@ -7,14 +7,8 @@ import (
 	"main/models"
 	"main/repositories"
 	"time"
+	"main/dto"
 )
-
-type SensorData struct {
-	Temperature  float32 `json:"temperature"`
-	Humidity     float32 `json:"humidity"`
-	SoilMoisture float32 `json:"soil_moisture"`
-}
-
 
 // AggregateSensorData Tiap 10 menit
 func AggregateSensorData() {
@@ -44,7 +38,7 @@ func aggregateDeviceData(deviceID uint) {
 
 	var totalTemp, totalHumid, totalSoil float32
 	for _, raw := range dataList {
-		var sensor SensorData
+		var sensor dto.SensorData
 		if err := json.Unmarshal([]byte(raw), &sensor); err != nil {
 			continue
 		}

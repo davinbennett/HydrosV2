@@ -25,7 +25,7 @@ func HandlePumpControl(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Pump control sent"})
+	c.JSON(http.StatusOK, "Pump control sent")
 }
 
 func GetDeviceLocation(c *gin.Context) {
@@ -77,7 +77,7 @@ func AddPlant(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Add plant success"})
+	c.JSON(http.StatusOK, "Add plant success")
 }
 
 func GetPlantInfo(c *gin.Context) {
@@ -179,7 +179,5 @@ func UnpairDevice(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, gin.H{
-		"massage": "Success Unpair",
-	})
+	utils.SuccessResponse(c, "Success Unpair")
 }

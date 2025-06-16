@@ -58,6 +58,8 @@ func main() {
 	log.Println("Cron started...")
 
 	// ! MQTT
+	config.InitMQTTClient()
+
 	deviceIDsUint, err := repositories.GetAllDeviceIDs()
 	if err != nil {
 		log.Fatalf("Failed to get device IDs: %v", err)
@@ -68,14 +70,12 @@ func main() {
 		deviceIDs = append(deviceIDs, fmt.Sprintf("DEVICE ID: %d", id))
 	}
 
-	mqttClient := config.InitMQTTClient()
-
 	var wg sync.WaitGroup
 	for _, deviceID := range deviceIDs {
 		wg.Add(1)
 		go func(did string) {
 			defer wg.Done()
-			mqtt.SubscribeTopics(mqttClient, did)
+			mqtt.SubscribeTopics(config.MQTTClient, did)
 		}(deviceID)
 	}
 	wg.Wait()
@@ -86,6 +86,9 @@ func main() {
 	r.GET("/ws", func(c *gin.Context) {
 		websocket.HandleWebSocket(c.Writer, c.Request)
 	})
+
+	// ! GEMINI
+	config.InitGemini()
 	
 	// ! RUN SERVER
 	routes.InitRoutes(r)

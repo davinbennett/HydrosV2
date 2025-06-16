@@ -43,5 +43,5 @@ func GetPumpHistoryPreview(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, gin.H{"data": logs})
+	utils.SuccessResponse(c, logs)
 }

@@ -86,7 +86,7 @@ func RequestOTP(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, gin.H{"message": "OTP sent to your email."})
+	utils.SuccessResponse(c, "OTP sent to your email.")
 }
 
 
@@ -107,7 +107,7 @@ func VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, gin.H{"message": "OTP verified successfully."})
+	utils.SuccessResponse(c, "OTP verified successfully.")
 }
 
 func RegisterWithEmail(c *gin.Context) {
@@ -150,7 +150,5 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, gin.H{
-		"message": "Password reset successful. Please login again.",
-	})
+	utils.SuccessResponse(c, "Password reset successful. Please login again.")
 }

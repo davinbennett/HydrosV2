@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"main/config"
-	"main/models"
+	"main/dto"
 	"main/repositories"
 	"strings"
 
@@ -34,7 +34,7 @@ func handleSensorData(client mqtt.Client, msg mqtt.Message) {
 	deviceID := extractDeviceIDFromTopic(topic)
 	log.Printf("[MQTT] Sensor data received | Device: %s | Topic: %s", deviceID, topic)
 
-	var sensorData models.SensorData
+	var sensorData dto.SensorData
 
 	if err := json.Unmarshal(payload, &sensorData); err != nil {
 		log.Printf("Failed to parse sensor data: %v", err)
