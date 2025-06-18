@@ -18,7 +18,6 @@ func SaveSensorData(key string, data any) error {
 	return client.RPush(ctx, key, jsonData).Err()
 }
 
-// GetSensorDataList mengambil semua data sensor dari Redis list
 func GetSensorDataList(key string) ([]string, error) {
 	ctx := context.Background()
 	client := config.RedisClient

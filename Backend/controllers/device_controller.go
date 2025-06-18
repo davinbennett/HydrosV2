@@ -16,12 +16,12 @@ func HandlePumpControl(c *gin.Context) {
 		IsOn bool `json:"ison"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		utils.BadRequestResponse(c, "Invalid input")
 		return
 	}
 
 	if err := services.ControlPump(deviceID, req.IsOn); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to control pump"})
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
@@ -33,7 +33,7 @@ func GetDeviceLocation(c *gin.Context) {
 
 	loc, err := services.GetLocation(deviceID)
 	if err != nil {
-		utils.NotFoundResponse(c, "Device not found")
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
@@ -47,7 +47,7 @@ func GetWeatherStatus(c *gin.Context) {
 
 	status, err := services.GetWeatherStatus(deviceID)
 	if err != nil {
-		utils.NotFoundResponse(c, "Failed to get weather status for device")
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
@@ -68,16 +68,16 @@ func AddPlant(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		utils.BadRequestResponse(c, "Invalid input")
 		return
 	}
 
 	if err := services.AddPlantInfo(deviceID, req.PlantName, req.ProgressPlan, req.Latitude, req.Longitude, req.Location); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add plant"})
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
-	c.JSON(http.StatusOK, "Add plant success")
+	utils.SuccessResponse(c, "Add plant success")
 }
 
 func GetPlantInfo(c *gin.Context) {
@@ -85,7 +85,7 @@ func GetPlantInfo(c *gin.Context) {
 
 	plantName, progressNow, progressPlan, err := services.GetPlantInfo(deviceID)
 	if err != nil {
-		utils.NotFoundResponse(c, "Failed to get plant info")
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
@@ -114,7 +114,7 @@ func UpdatePlantInfo(c *gin.Context) {
 
 	err := services.UpdatePlant(deviceID, req.PlantName, req.Location, req.ProgressPlan, req.Latitude, req.Longitude)
 	if err != nil {
-		utils.InternalServerErrorResponse(c, "Failed to update plant info")
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
@@ -145,7 +145,7 @@ func PairDevice(c *gin.Context) {
 
 	deviceId, err := services.PairDevice(userID.(uint), req.Code)
 	if err != nil {
-		utils.InternalServerErrorResponse(c, "Server error")
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
@@ -175,7 +175,7 @@ func UnpairDevice(c *gin.Context) {
 
 	err = services.UnpairDevice(userID.(uint), uint(deviceID))
 	if err != nil {
-		utils.InternalServerErrorResponse(c, err.Error())
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 

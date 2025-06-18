@@ -15,7 +15,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	config.Clients[conn] = true
-	log.Println("New WebSocket client connected")
+	log.Println("✅ New WebSocket client connected")
 
 	go func() {
 		defer func() {

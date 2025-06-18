@@ -43,3 +43,20 @@ func GetPumpStartTimes(deviceID string) ([]map[string]interface{}, error) {
 
 	return results, err
 }
+
+func FindPumpLog(deviceID string, from, to *time.Time, limit int) ([]models.PumpLog, error) {
+	var logs []models.PumpLog
+
+	query := config.PostgresDB.Where("device_id = ?", deviceID)
+
+	if from != nil && to != nil {
+		query = query.Where("start_time >= ? AND end_time <= ?", *from, *to)
+	}
+
+	err := query.Order("start_time DESC").Limit(limit).Find(&logs).Error
+	return logs, err
+}
+
+func DeletePumpLogByID(id string) error {
+	return config.PostgresDB.Delete(&models.PumpLog{}, id).Error
+}

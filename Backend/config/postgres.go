@@ -39,7 +39,7 @@ func ConnectPostgres() error {
 	}
 
 	PostgresDB = db
-	log.Println("Successfully connected to PostgreSQL!")
+	log.Println("✅ Successfully connected to PostgreSQL!")
 	return nil
 }
 
@@ -59,7 +59,7 @@ func AutoMigrate(models ...interface{}) error {
         return fmt.Errorf("failed to auto migrate: %w", err)
     }
 
-    log.Println("Migration completed successfully!")
+    log.Println("✅ Migration completed successfully!")
     for _, model := range models {
         var count int64
         debugDB.Model(model).Count(&count)

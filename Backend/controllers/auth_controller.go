@@ -101,9 +101,9 @@ func VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	valid, errMsg := services.VerifyOTP(req.Email, req.OTP)
+	valid, err := services.VerifyOTP(req.Email, req.OTP)
 	if !valid {
-		utils.UnauthorizedResponse(c, errMsg)
+		utils.UnauthorizedResponse(c, err)
 		return
 	}
 
@@ -124,7 +124,7 @@ func RegisterWithEmail(c *gin.Context) {
 
 	accessToken, userID, err := services.RegisterWithEmail(req.Username, req.Email, req.Password)
 	if err != "" {
-		utils.BadRequestResponse(c, err)
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 
@@ -141,12 +141,12 @@ func ResetPassword(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequestResponse(c, "Invalid request format.")
+		utils.BadRequestResponse(c, "Invalid input")
 		return
 	}
 
 	if err := services.ResetPassword(req.Email, req.NewPassword); err != nil {
-		utils.UnauthorizedResponse(c, err.Error())
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
 		return
 	}
 

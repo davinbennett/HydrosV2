@@ -15,6 +15,7 @@ func InitRoutes(r *gin.Engine) {
 		DeviceRoute(route)
 		PumpLogRoute(route)
 		AiRoutes(route)
+		SensorAggregateRoutes(route)
 
 		protected := route.Group("/")
 		protected.Use(middleware.JWTMiddleware())

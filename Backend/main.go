@@ -55,7 +55,7 @@ func main() {
 		log.Fatal("Failed to schedule cron job:", err)
 	}
 	config.CronScheduler.Start()
-	log.Println("Cron started...")
+	log.Println("✅ Cron started")
 
 	// ! MQTT
 	config.InitMQTTClient()
@@ -88,7 +88,7 @@ func main() {
 	})
 
 	// ! GEMINI
-	config.InitGemini()
+	go config.InitGemini()
 	
 	// ! RUN SERVER
 	routes.InitRoutes(r)
