@@ -11,6 +11,8 @@ func DeviceRoute(rg *gin.RouterGroup) {
 	{
 		r.POST("/:id/pump-status", controllers.HandlePumpControl)
 		r.POST("/:id/plant", controllers.AddPlant)
+		r.POST("/:id/control-soil", controllers.HandleSoilControl)
+
 		
 		r.GET("/:id/location", controllers.GetDeviceLocation)
 		r.GET("/:id/weather-status", controllers.GetWeatherStatus)

@@ -117,6 +117,14 @@ func UnpairDevice(userID uint, deviceID uint) error {
 		return err
 	}
 
-	// hapus relasi device dari user
 	return config.PostgresDB.Model(&user).Association("Devices").Delete(&models.Device{ID: deviceID})
+}
+
+func UpdateSoilSettings(deviceID string, soilMin, soilMax int) error {
+	return config.PostgresDB.Model(&models.Device{}).
+		Where("id = ?", deviceID).
+		Updates(map[string]interface{}{
+			"min_soil_setting": soilMin,
+			"max_soil_setting": soilMax,
+		}).Error
 }

@@ -89,3 +89,7 @@ func PairDevice(userID uint, code string) (uint, error) {
 func UnpairDevice(userID uint, deviceID uint) error {
 	return repositories.UnpairDevice(userID, deviceID)
 }
+
+func ControlSoil(deviceID string, soilMin, soilMax int) error {
+	return repositories.UpdateSoilSettings(deviceID, soilMin, soilMax)
+}

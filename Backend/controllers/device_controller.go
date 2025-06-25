@@ -181,3 +181,25 @@ func UnpairDevice(c *gin.Context) {
 
 	utils.SuccessResponse(c, "Success Unpair")
 }
+
+
+func HandleSoilControl(c *gin.Context) {
+	deviceID := c.Param("id")
+
+	var req struct {
+		SoilMin int `json:"soil_min"`
+		SoilMax int `json:"soil_max"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.BadRequestResponse(c, "Invalid input")
+		return
+	}
+
+	if err := services.ControlSoil(deviceID, req.SoilMin, req.SoilMax); err != nil {
+		utils.InternalServerErrorResponse(c, "Failed to update soil settings")
+		return
+	}
+
+	utils.SuccessResponse(c, "Soil control updated")
+}

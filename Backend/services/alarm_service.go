@@ -2,6 +2,7 @@ package services
 
 import (
 	"main/repositories"
+	"strconv"
 	"time"
 )
 
@@ -35,4 +36,22 @@ func GetDeviceAlarms(deviceID string) (map[string]interface{}, error) {
 		"next_alarm": next,
 		"list_alarm": list,
 	}, nil
+}
+
+func AddAlarm(deviceIDStr string, scheduleTime time.Time) error {
+	deviceID, err := strconv.Atoi(deviceIDStr)
+	if err != nil {
+		return err
+	}
+
+	return repositories.CreateAlarm(uint(deviceID), scheduleTime)
+}
+
+
+func DeleteAlarm(deviceIDStr string, scheduleTime time.Time) error {
+	deviceID, err := strconv.Atoi(deviceIDStr)
+	if err != nil {
+		return err
+	}
+	return repositories.DeleteAlarmBySchedule(uint(deviceID), scheduleTime)
 }
