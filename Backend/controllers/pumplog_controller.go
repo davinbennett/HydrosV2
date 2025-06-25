@@ -113,3 +113,27 @@ func DeletePumpLogByID(c *gin.Context) {
 
 	utils.SuccessResponse(c, "Success Delete Data")
 }
+
+func GetPumpQuickActivity(c *gin.Context) {
+	deviceID := c.Param("device-id")
+
+	today := c.DefaultQuery("today", "false") == "true"
+	lastday := c.DefaultQuery("lastday", "false") == "true"
+	month := c.DefaultQuery("month", "false") == "true"
+	startDate := c.Query("start-date")
+	endDate := c.Query("end-date")
+
+	from, to, err := utils.ResolveDateRange(today, lastday, month, startDate, endDate)
+	if err != nil {
+		utils.BadRequestResponse(c, err.Error())
+		return
+	}
+
+	data, err := services.GetPumpQuickActivity(deviceID, from, to)
+	if err != nil {
+		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+		return
+	}
+
+	utils.SuccessResponse(c, data)
+}

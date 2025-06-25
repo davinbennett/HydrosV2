@@ -14,7 +14,10 @@ func PumpLogRoute(rg *gin.RouterGroup) {
 		r.GET("/:device-id/history-preview", controllers.GetPumpHistoryPreview)
 		r.GET("/:device-id", controllers.GetPumpLog)
 		r.GET("/details/:device-id", controllers.GetPumpLogDetails)
+		r.GET("/:device-id/quick-activity", controllers.GetPumpQuickActivity)
+
 
 		r.DELETE("/:id", controllers.DeletePumpLogByID)
 	}
 }
+

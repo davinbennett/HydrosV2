@@ -89,3 +89,40 @@ func GetPumpLogDetailList(deviceID string, from, to *time.Time) ([]map[string]in
 func DeletePumpLog(id string) error {
 	return repositories.DeletePumpLogByID(id)
 }
+
+func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]interface{}, error) {
+	logs, err := repositories.FindPumpLog(deviceID, from, to, 1000)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(logs) == 0 {
+		return map[string]interface{}{
+			"last_pumped": nil,
+			"soil_min":    nil,
+			"soil_max":    nil,
+		}, nil
+	}
+
+	soilMin := logs[0].SoilBefore
+	soilMax := logs[0].SoilBefore
+	lastPumped := logs[0].StartTime
+
+	for _, log := range logs {
+		if log.SoilBefore < soilMin {
+			soilMin = log.SoilBefore
+		}
+		if log.SoilBefore > soilMax {
+			soilMax = log.SoilBefore
+		}
+		if log.StartTime.After(*lastPumped) {
+			lastPumped = log.StartTime
+		}
+	}
+
+	return map[string]interface{}{
+		"last_pumped": lastPumped.Format(time.RFC3339),
+		"soil_min":    soilMin,
+		"soil_max":    soilMax,
+	}, nil
+}
