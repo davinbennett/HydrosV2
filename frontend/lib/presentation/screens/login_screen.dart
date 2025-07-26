@@ -1,179 +1,217 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
+import 'package:frontend/core/utils/validator.dart';
+import 'package:frontend/presentation/controllers/login_controller.dart';
+import 'package:frontend/presentation/widgets/global/button.dart';
+import 'package:frontend/presentation/widgets/global/text_form_field.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mediaQueryData = MediaQuery.of(context);
+    final screenHeight = mediaQueryData.size.height;
+    final statusBarHeight = mediaQueryData.padding.top;
+    final bottomPadding = mediaQueryData.padding.bottom;
+    final safeScreenHeight = screenHeight - statusBarHeight - bottomPadding;
+
+    final controller = ref.watch(loginControllerProvider);
+    final controllerNotifier = ref.read(loginControllerProvider.notifier);
+
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: AppColors.secondary,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
 
     return Scaffold(
       body: Container(
-        width: size.width,
-        height: size.height,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              AppColors.primary, 
-              AppColors.secondary
-            ],
+            colors: [AppColors.primary, AppColors.secondary],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 60),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Judul dan subtitle
-              Text(
-                'Welcome Back, Hydromers!',
-                style: TextStyle(
-                  fontSize: AppFontSize.x2l,
-                  fontWeight: AppFontWeight.bold,
-                ),
-              ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: safeScreenHeight),
+              child: Form(
+                key: controller.formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
 
-              Text(
-                'Sign in to continue',
-                style: TextStyle(
-                  fontSize: AppFontSize.m,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: AppFontWeight.light
-                ),
-              ),
+                    // ! TOP
+                    Column(
+                      children: [
+                        // Judul dan subtitle
+                        FittedBox(
+                          child: Text(
+                            'Welcome Back, Hydromers!',
+                            style: TextStyle(
+                              fontSize: AppFontSize.xxl,
+                              fontWeight: AppFontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
 
-              // Gambar
-              // SizedBox(
-              //   height: 150,
-              //   child: Image.asset(
-              //     'assets/images/login.png',
-              //   ), // Pastikan ada file ini
-              // ),
+                        FittedBox(
+                          child: Text(
+                            'Sign in to manage your smart irrigation system',
+                            style: TextStyle(
+                              fontSize: AppFontSize.s,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: AppFontWeight.light,
+                            ),
+                          ),
+                        ),
 
-              // Form
-              TextFormField(
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.email),
-                  labelText: 'Email',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.lock),
-                  labelText: 'Password',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              SizedBox(height: 8),
-
-              // Forgot password
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Forgot password?',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 16),
-
-              // Sign In button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.blueAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                        // Gambar
+                        SizedBox(
+                          height: 150.h,
+                          child: Image.asset(
+                            'lib/assets/images/login.png',
+                          ), // Pastikan ada file ini
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Text('Sign In'),
+
+                    // ! MID
+                    Column(
+                      children: [
+                        // Email
+                        TextFormFieldWidget(
+                          label: 'Email',
+                          icon: Icons.email_outlined,
+                          controller: controller.emailController,
+                          validator: AppValidator.email,
+                        ),
+
+                        // Password
+                        TextFormFieldWidget(
+                          label: 'Password',
+                          icon: Icons.lock_outline,
+                          isPassword: true,
+                          controller: controller.passwordController,
+                          validator: AppValidator.password,
+                        ),
+
+                        // Forgot password
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {},
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size(
+                                0,
+                                0,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Forgot password?',
+                              style: TextStyle(
+                                color: AppColors.grayLight,
+                                fontSize: AppFontSize.s,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // ! BOTTOM
+                    Column(
+                      children: [
+                        // Sign In button
+                        ButtonWidget(
+                          text: "Sign In",
+                          onPressed: () {
+                            final isValid =
+                                controller.formKey.currentState?.validate() ??
+                                false;
+                            if (isValid) {
+                              controllerNotifier.login();
+                            }
+                          },
+                        ),
+                        
+                        // Divider with text
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: AppColors.grayLight)),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'Or Sign In With',
+                                style: TextStyle(color: AppColors.grayLight),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: AppColors.grayLight)),
+                          ],
+                        ),
+                        
+                        // Google Button
+                        ButtonWidget(
+                          text: "Google",
+                          onPressed: () {},
+                          svgAsset: 'lib/assets/icons/google.svg',
+                          isOutlined: true,
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.gray,
+                          borderColor: AppColors.grayLight,
+                        ),
+                        
+                        // Sign up text
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't have an account?  ",
+                              style: TextStyle(
+                                color: AppColors.gray,
+                                fontSize: AppFontSize.s,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                // Navigate to signup
+                              },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size(0, 0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                'Sign Up',
+                                style: TextStyle(
+                                  color: AppColors.gray,
+                                  fontWeight: AppFontWeight.bold,
+                                  fontSize: AppFontSize.s,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-
-              SizedBox(height: 24),
-
-              // Divider with text
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.white70)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      'or sign in with',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.white70)),
-                ],
-              ),
-
-              SizedBox(height: 24),
-
-              // Google Button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  // icon: Image.asset('assets/icons/google.png', height: 24),
-                  label: Text(
-                    'Continue with Google',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white),
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: 24),
-
-              // Sign up text
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Don't have an account? ",
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Navigate to signup
-                    },
-                    child: Text(
-                      'Sign Up',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static ThemeData lightTheme = ThemeData(
-    fontFamily: GoogleFonts.poppins().fontFamily,
+    fontFamily: 'Poppins',
     scaffoldBackgroundColor: AppColors.secondary,
     colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
     useMaterial3: true,

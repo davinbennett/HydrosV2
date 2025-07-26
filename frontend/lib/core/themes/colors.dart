@@ -7,7 +7,7 @@ class AppColors {
   static const black = Color(0xFF212121);
   static const white = Colors.white;
   static const success = Color(0xFF29AB87);
-  static const danger = Color(0xFFFF5C5C);
+  static const danger = Colors.redAccent;
   static const warning = Color(0xFFFFC107);
   static const blueLight = Color(0xFF85CBD6);
   static const blue = Color(0xFF38ACFC);
