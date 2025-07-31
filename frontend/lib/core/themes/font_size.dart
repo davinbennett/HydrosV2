@@ -1,10 +1,7 @@
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 class AppFontSize {
-  static double get xs => 12.sp;
-  static double get s => 14.sp;
-  static double get m => 16.sp;
-  static double get l => 18.sp;
-  static double get xl => 20.sp;
-  static double get xxl => 22.sp;
+  static double get s => 13; // fix
+  static double get m => 15; // fix
+  static double get l => 18;
+  static double get xl => 26; // fix
+  static double get xxl => 32;
 }

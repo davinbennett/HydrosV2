@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:frontend/core/themes/element_size.dart';
 import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
+import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
 import 'package:frontend/presentation/controllers/login_controller.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
@@ -16,21 +18,19 @@ class LoginScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mediaQueryData = MediaQuery.of(context);
-    final screenHeight = mediaQueryData.size.height;
-    final statusBarHeight = mediaQueryData.padding.top;
-    final bottomPadding = mediaQueryData.padding.bottom;
-    final safeScreenHeight = screenHeight - statusBarHeight - bottomPadding;
+    final mq = MediaQueryHelper.of(context);
 
     final controller = ref.watch(loginControllerProvider);
     final controllerNotifier = ref.read(loginControllerProvider.notifier);
 
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        systemNavigationBarColor: AppColors.secondary,
+      SystemUiOverlayStyle(
+        systemNavigationBarColor: mq.isPortrait ? AppColors.secondary : AppColors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
     );
+
+    
 
     return Scaffold(
       body: Container(
@@ -41,175 +41,190 @@ class LoginScreen extends ConsumerWidget {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: safeScreenHeight),
-              child: Form(
-                key: controller.formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: AppSpacingSize.l,
+            right: AppSpacingSize.l,
+            top: mq.notchHeight * 1.5,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: mq.safeHeight),
+            child: Form(
+              key: controller.formKey,
+              child: Column(
+                children: [
+                  
+                  // ! TOP
+                  Column(
+                    children: [
 
-                    // ! TOP
-                    Column(
-                      children: [
-                        // Judul dan subtitle
-                        FittedBox(
+                      // Judul dan subtitle
+                      FittedBox(
+                        child: Text(
+                          'Welcome Back, Hydromers!',
+                          style: TextStyle(
+                            fontSize: AppFontSize.xl,
+                            fontWeight: AppFontWeight.bold,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacingSize.xs),
+
+                      FittedBox(
+                        child: Text(
+                          'Sign in to manage your smart irrigation system',
+                          style: TextStyle(
+                            fontSize: AppFontSize.m,
+                            fontStyle: FontStyle.italic,
+                            fontWeight: AppFontWeight.light,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacingSize.xl),
+
+                      // Gambar
+                      SizedBox(
+                        width: 200,
+                        child: Image.asset(
+                          'lib/assets/images/login.png',
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacingSize.xl),
+                    ],
+                  ),
+
+                  // ! MID
+                  Column(
+                    spacing: AppSpacingSize.s,
+                    children: [
+                      // Email
+                      TextFormFieldWidget(
+                        label: 'Email',
+                        icon: Icons.email_outlined,
+                        controller: controller.emailController,
+                        validator: AppValidator.email,
+                      ),
+
+                      // Password
+                      TextFormFieldWidget(
+                        label: 'Password',
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                        controller: controller.passwordController,
+                        validator: AppValidator.password,
+                      ),
+
+                      // Forgot password
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           child: Text(
-                            'Welcome Back, Hydromers!',
+                            'Forgot password?',
                             style: TextStyle(
-                              fontSize: AppFontSize.xxl,
-                              fontWeight: AppFontWeight.bold,
-                              letterSpacing: 1.2,
+                              color: AppColors.grayLight,
+                              fontSize: AppFontSize.m,
                             ),
                           ),
                         ),
+                      ),
+                    ],
+                  ),
 
-                        FittedBox(
-                          child: Text(
-                            'Sign in to manage your smart irrigation system',
-                            style: TextStyle(
-                              fontSize: AppFontSize.s,
-                              fontStyle: FontStyle.italic,
-                              fontWeight: AppFontWeight.light,
-                            ),
-                          ),
-                        ),
+                  SizedBox(height: AppSpacingSize.xxl), 
 
-                        // Gambar
-                        SizedBox(
-                          height: 150.h,
-                          child: Image.asset(
-                            'lib/assets/images/login.png',
-                          ), // Pastikan ada file ini
-                        ),
-                      ],
-                    ),
+                  // ! BOTTOM
+                  Column(
+                    spacing: AppSpacingSize.s,
+                    children: [
+                      // Sign In button
+                      ButtonWidget(
+                        text: "Sign In",
+                        onPressed: () {
+                          final isValid =
+                              controller.formKey.currentState?.validate() ??
+                              false;
+                          if (isValid) {
+                            controllerNotifier.login();
+                          }
+                        },
+                      ),
 
-                    // ! MID
-                    Column(
-                      children: [
-                        // Email
-                        TextFormFieldWidget(
-                          label: 'Email',
-                          icon: Icons.email_outlined,
-                          controller: controller.emailController,
-                          validator: AppValidator.email,
-                        ),
-
-                        // Password
-                        TextFormFieldWidget(
-                          label: 'Password',
-                          icon: Icons.lock_outline,
-                          isPassword: true,
-                          controller: controller.passwordController,
-                          validator: AppValidator.password,
-                        ),
-
-                        // Forgot password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size(
-                                0,
-                                0,
-                              ),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
+                      // Divider with text
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: AppColors.grayLight)),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
-                              'Forgot password?',
+                              'Or Sign In With',
                               style: TextStyle(
                                 color: AppColors.grayLight,
                                 fontSize: AppFontSize.s,
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                          Expanded(child: Divider(color: AppColors.grayLight)),
+                        ],
+                      ),
 
-                    // ! BOTTOM
-                    Column(
-                      children: [
-                        // Sign In button
-                        ButtonWidget(
-                          text: "Sign In",
-                          onPressed: () {
-                            final isValid =
-                                controller.formKey.currentState?.validate() ??
-                                false;
-                            if (isValid) {
-                              controllerNotifier.login();
-                            }
-                          },
+                      // Google Button
+                      ButtonWidget(
+                        text: "Google",
+                        onPressed: () {},
+                        svgAsset: SvgPicture.asset(
+                          'lib/assets/icons/google.svg',
+                          width: AppElementSize.m,
                         ),
-                        
-                        // Divider with text
-                        Row(
-                          children: [
-                            Expanded(child: Divider(color: AppColors.grayLight)),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                'Or Sign In With',
-                                style: TextStyle(color: AppColors.grayLight),
-                              ),
+                        isOutlined: true,
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.gray,
+                        borderColor: AppColors.grayLight,
+                      ),
+
+                      // Sign up text
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account?  ",
+                            style: TextStyle(
+                              color: AppColors.gray,
+                              fontSize: AppFontSize.m,
                             ),
-                            Expanded(child: Divider(color: AppColors.grayLight)),
-                          ],
-                        ),
-                        
-                        // Google Button
-                        ButtonWidget(
-                          text: "Google",
-                          onPressed: () {},
-                          svgAsset: 'lib/assets/icons/google.svg',
-                          isOutlined: true,
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.gray,
-                          borderColor: AppColors.grayLight,
-                        ),
-                        
-                        // Sign up text
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Don't have an account?  ",
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Navigate to signup
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size(0, 0),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Sign Up',
                               style: TextStyle(
                                 color: AppColors.gray,
-                                fontSize: AppFontSize.s,
+                                fontWeight: AppFontWeight.bold,
+                                fontSize: AppFontSize.m,
                               ),
                             ),
-                            TextButton(
-                              onPressed: () {
-                                // Navigate to signup
-                              },
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size(0, 0),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                'Sign Up',
-                                style: TextStyle(
-                                  color: AppColors.gray,
-                                  fontWeight: AppFontWeight.bold,
-                                  fontSize: AppFontSize.s,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

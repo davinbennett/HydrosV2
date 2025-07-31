@@ -1,7 +1,8 @@
-class AppSpacing {
-  static final double xs = 4;
-  static final double s = 8;
-  static final double m = 12;
-  static final double l = 16;
-  static final double xl = 20;
+class AppSpacingSize {
+  static double get xs => 4;
+  static double get s => 12; // fix
+  static double get m => 14; // fix
+  static double get l => 18; // fix
+  static double get xl => 32; //fix
+  static double get xxl => 36; //fix
 }

@@ -33,19 +33,28 @@ class TextFormFieldWidget extends StatelessWidget {
       onChanged: onChanged,
       validator: validator,
       style: TextStyle(
-        fontSize: AppFontSize.m,
+        fontSize: AppFontSize.s,
         color: AppColors.black,
       ),
       cursorColor: AppColors.orange,
       decoration: InputDecoration(
-        
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpacingSize.m, // padding kiri-kanan teks
+          vertical: AppFontSize.m, // padding atas-bawah teks
+        ),
         labelText: label,
         labelStyle: TextStyle(
           color: AppColors.grayLight,
-          // fontSize: AppFontSize.m,
+          fontSize: AppFontSize.m,
         ),
         floatingLabelStyle: TextStyle(color: AppColors.orange),
-        prefixIcon: icon != null ? Icon(icon) : null,
+        prefixIcon:
+            icon != null
+                ? Padding(
+                  padding: EdgeInsets.only(left: AppSpacingSize.m),
+                  child: Icon(icon),
+                )
+                : null,
         prefixIconColor: WidgetStateColor.resolveWith((states) {
           if (states.contains(WidgetState.focused)) {
             return AppColors.orange;
@@ -53,7 +62,6 @@ class TextFormFieldWidget extends StatelessWidget {
           return AppColors.grayLight;
         }),
         filled: true,
-        
         fillColor: Colors.white,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.rm),
@@ -76,7 +84,8 @@ class TextFormFieldWidget extends StatelessWidget {
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.rm),
           borderSide: BorderSide(width: 0.7, color: AppColors.grayLight),
-        )
+        ),
+        
       ),
     );
 

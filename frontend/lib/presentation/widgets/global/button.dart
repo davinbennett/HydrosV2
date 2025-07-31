@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend/core/themes/element_size.dart';
 import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
@@ -8,7 +9,7 @@ import 'package:frontend/core/themes/font_weight.dart';
 class ButtonWidget extends StatelessWidget {
   final String text;
   final IconData? icon;
-  final String? svgAsset;
+  final SvgPicture? svgAsset;
   final VoidCallback onPressed;
   final Color backgroundColor;
   final Color foregroundColor;
@@ -35,28 +36,27 @@ class ButtonWidget extends StatelessWidget {
       text,
       style: TextStyle(
         color: foregroundColor,
-        fontWeight: AppFontWeight.semiBold,
+        fontWeight: AppFontWeight.medium,
+        fontSize: AppFontSize.m
       ),
     );
 
     final iconWidget =
         icon != null
-            ? Icon(icon, size: 20, color: foregroundColor)
-            : svgAsset != null
-            ? SvgPicture.asset(svgAsset!, width: 20, height: 20)
-            : null;
+            ? Icon(icon, size: AppElementSize.m, color: foregroundColor)
+            : svgAsset;
 
     final child =
         iconWidget == null
             ? textWidget
             : Row(
               mainAxisSize: MainAxisSize.min,
-              children: [iconWidget, const SizedBox(width: 10), textWidget],
+              children: [iconWidget, SizedBox(width: AppSpacingSize.s), textWidget],
             );
 
     final padding = EdgeInsets.symmetric(
-      vertical: AppSpacing.l, 
-      horizontal: 16
+      vertical: AppSpacingSize.m, 
+      horizontal: AppSpacingSize.l
     );
 
     return SizedBox(

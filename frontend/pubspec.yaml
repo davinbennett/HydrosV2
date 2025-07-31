@@ -11,6 +11,7 @@ dependencies:
   fluentui_system_icons: ^1.1.273
   flutter:
     sdk: flutter
+  flutter_dotenv: ^5.2.1
   flutter_riverpod: ^2.6.1
   flutter_screenutil: ^5.9.3
   flutter_secure_storage: ^9.2.4

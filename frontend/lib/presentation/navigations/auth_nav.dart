@@ -1,4 +1,5 @@
 import 'package:frontend/presentation/screens/login_screen.dart';
+import 'package:frontend/presentation/screens/testing_screen.dart';
 import 'package:go_router/go_router.dart';
 
 final authRoutes = <GoRoute>[
@@ -7,5 +8,9 @@ final authRoutes = <GoRoute>[
     path: '/login',
     builder: (context, state) => const LoginScreen(),
   ),
-  // Add more auth/login/register routes here
+  GoRoute(
+    name: 'tes',
+    path: '/tes',
+    builder: (context, state) => const TestingScreen(),
+  ),
 ];
