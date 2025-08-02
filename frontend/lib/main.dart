@@ -24,7 +24,7 @@ void main() {
 
 class MainApp extends ConsumerWidget {
   const MainApp({super.key});
-
+  
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(mainRouterProvider);
