@@ -2,8 +2,9 @@ package config
 
 import (
 	"context"
-	"os"
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -23,5 +24,6 @@ func ConnectRedis() error{
 		return fmt.Errorf("failed to connect to Redis: %v", err)
 	}
 
+	log.Println("✅ Successfully connected to RedisClient!")
 	return nil
 }

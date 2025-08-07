@@ -28,10 +28,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-      final authStatus = ref.read(authProvider);
+      final authStatus = ref.read(statusLoginProvider);
 
       if (authStatus == AuthStatus.authenticated) {
-        context.go('/app/home');
+        context.go('/home');
       } else {
         context.go('/login');
       }

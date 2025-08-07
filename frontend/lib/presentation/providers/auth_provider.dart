@@ -1,34 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/infrastructure/local/secure_storage.dart';
+import 'package:frontend/domain/usecase/auth/login_with_email.dart';
+import 'package:frontend/domain/usecase/auth/login_with_google.dart';
+import 'package:frontend/presentation/controllers/login_controller.dart';
+import 'package:frontend/presentation/controllers/splash_controller.dart';
+import 'package:frontend/presentation/providers/injection.dart';
 
 enum AuthStatus { loading, authenticated, unauthenticated }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthStatus>((ref) {
-  return AuthNotifier()..checkAuth();
+final statusLoginProvider = StateNotifierProvider<SplashController, AuthStatus>((ref) {
+  return SplashController()..checkLogin();
 });
 
-class AuthNotifier extends StateNotifier<AuthStatus> {
-  AuthNotifier() : super(AuthStatus.loading);
+final loginControllerProvider =
+    StateNotifierProvider<LoginController, AuthStatus>((ref) {
+      final authRepository = ref.read(authRepositoryProvider);
 
-  Future<void> checkAuth() async {
-    final token = await SecureStorage.getAccessToken();
-    final userId = await SecureStorage.getUserId();
-
-    if (token != null && token.isNotEmpty && userId != null) {
-      state = AuthStatus.authenticated;
-    } else {
-      state = AuthStatus.unauthenticated;
-    }
-  }
-
-  Future<void> login({required String token, required String userId}) async {
-    await SecureStorage.saveAccessToken(token);
-    await SecureStorage.saveUserId(userId);
-    state = AuthStatus.authenticated;
-  }
-
-  Future<void> logout() async {
-    await SecureStorage.clearAll();
-    state = AuthStatus.unauthenticated;
-  }
-}
+      return LoginController(
+        loginEmailUsecase: LoginWithEmailUseCase(authRepository),
+        loginGoogleUsecase: LoginWithGoogleUseCase(authRepository),
+      );
+    });

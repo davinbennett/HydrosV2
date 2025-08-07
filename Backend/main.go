@@ -20,15 +20,15 @@ import (
 
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
-		log.Fatalf("Env connection failed: %v", err)
+		log.Fatalf("🔴 Env connection failed: %v", err)
 	}
 
-	// if err := config.ConnectRedis(); err != nil {
-	// 	log.Fatalf("Redis connection failed: %v", err)
-	// }
+	if err := config.ConnectRedis(); err != nil {
+		log.Fatalf("🔴 Redis connection failed: %v", err)
+	}
 
 	if err := config.ConnectPostgres(); err != nil {
-		log.Fatalf("Postgres connection failed: %v", err)
+		log.Fatalf("🔴 Postgres connection failed: %v", err)
 	}
 
 	r := gin.Default()
@@ -40,19 +40,19 @@ func main() {
 		&models.PumpLog{},
 		&models.SensorAggregate{},
 	); err != nil {
-		log.Fatalf("Migration failed: %v", err)
+		log.Fatalf("🔴 Migration failed: %v", err)
 	}
 
 	// ! CRON
 	if err := config.InitCron(); err != nil {
-		log.Fatalf("Init cron failed: %v", err)
+		log.Fatalf("🔴 Init cron failed: %v", err)
 	}
 	_, err := config.CronScheduler.NewJob(
 		gocron.DurationJob(10*time.Minute), // tiap 10 menit
 		gocron.NewTask(cron.AggregateSensorData),
 	)
 	if err != nil {
-		log.Fatal("Failed to schedule cron job:", err)
+		log.Fatal("🔴 Failed to schedule cron job:", err)
 	}
 	config.CronScheduler.Start()
 	log.Println("✅ Cron started")
@@ -62,7 +62,7 @@ func main() {
 
 	deviceIDsUint, err := repositories.GetAllDeviceIDs()
 	if err != nil {
-		log.Fatalf("Failed to get device IDs: %v", err)
+		log.Fatalf("🔴 Failed to get device IDs: %v", err)
 	}
 
 	var deviceIDs []string

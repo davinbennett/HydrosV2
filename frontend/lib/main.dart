@@ -9,14 +9,12 @@ import 'package:flutter/services.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();
+  await dotenv.load(fileName: ".env");
   runApp(const ProviderScope(child: MainApp()));
 }
 
 class MainApp extends ConsumerWidget {
   const MainApp({super.key});
-
-
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

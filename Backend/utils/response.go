@@ -8,28 +8,28 @@ import (
 
 type APIResponse struct {
 	Code    int         `json:"code"`
-	Data    interface{} `json:"data,omitempty"`
+	Data    any `json:"data,omitempty"`
 	Error   string      `json:"error,omitempty"`
 	Message string      `json:"message,omitempty"`
 }
 
-func SuccessResponse(c *gin.Context, data interface{}) {
+func SuccessResponse(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, APIResponse{
-		Code: http.StatusOK,
+		Code: 200,
 		Data: data,
 	})
 }
 
-func CreatedResponse(c *gin.Context, data interface{}) {
+func CreatedResponse(c *gin.Context, data any) {
 	c.JSON(http.StatusCreated, APIResponse{
-		Code: http.StatusCreated,
+		Code: 200,
 		Data: data,
 	})
 }
 
-func UpdatedResponse(c *gin.Context, data interface{}) {
+func UpdatedResponse(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, APIResponse{
-		Code:    http.StatusOK,
+		Code:    200,
 		Data:    data,
 		Message: "Updated successfully",
 	})
@@ -37,49 +37,49 @@ func UpdatedResponse(c *gin.Context, data interface{}) {
 
 func DeletedResponse(c *gin.Context) {
 	c.JSON(http.StatusOK, APIResponse{
-		Code:    http.StatusOK,
+		Code:    200,
 		Message: "Deleted successfully",
 	})
 }
 
 func BadRequestResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusBadRequest, APIResponse{
-		Code:  http.StatusBadRequest,
-		Error: message,
+		Code:  500,
+		Message: message,
 	})
 }
 
 func UnauthorizedResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusUnauthorized, APIResponse{
-		Code:  http.StatusUnauthorized,
-		Error: message,
+		Code:  500,
+		Message: message,
 	})
 }
 
 func ForbiddenResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusForbidden, APIResponse{
-		Code:  http.StatusForbidden,
-		Error: message,
+		Code:  500,
+		Message: message,
 	})
 }
 
 func NotFoundResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusNotFound, APIResponse{
 		Code:  http.StatusNotFound,
-		Error: message,
+		Message: message,
 	})
 }
 
 func ConflictResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusConflict, APIResponse{
-		Code:  http.StatusConflict,
-		Error: message,
+		Code:  500,
+		Message: message,
 	})
 }
 
 func InternalServerErrorResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusInternalServerError, APIResponse{
-		Code:  http.StatusInternalServerError,
-		Error: message,
+		Code:  500,
+		Message: message,
 	})
 }

@@ -38,7 +38,7 @@ func SendOTPEmail(to, otp string) error {
 		<h2 style="color:#2CC49C;">Hydros Account Verification</h2>
 		<p>Your OTP code is: <strong style="font-size:18px;">%s</strong></p>
 		<p style="color:#6b7280;">
-			This code will expire in 5 minutes.<br>
+			This code will expire in 10 minutes.<br>
 			<b>Do not share</b> this code with anyone, including Hydros support.
 		</p>
 		<hr style="border:1px solid #e5e7eb;">

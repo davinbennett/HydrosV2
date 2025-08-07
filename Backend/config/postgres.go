@@ -7,7 +7,6 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var PostgresDB *gorm.DB
@@ -22,9 +21,7 @@ func ConnectPostgres() error {
 		os.Getenv("POSTGRES_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -43,28 +40,16 @@ func ConnectPostgres() error {
 	return nil
 }
 
+
 func AutoMigrate(models ...interface{}) error {
-    if PostgresDB == nil {
-        return fmt.Errorf("database connection not initialized")
-    }
+	if PostgresDB == nil {
+		return fmt.Errorf("database connection not initialized")
+	}
 
-    debugDB := PostgresDB.Debug()
+	if err := PostgresDB.AutoMigrate(models...); err != nil {
+		return fmt.Errorf("failed to auto migrate: %w", err)
+	}
 
-    log.Println("Starting database migration...")
-    for _, model := range models {
-        log.Printf("Migrating model: %T", model)
-    }
-
-    if err := debugDB.AutoMigrate(models...); err != nil {
-        return fmt.Errorf("failed to auto migrate: %w", err)
-    }
-
-    log.Println("✅ Migration completed successfully!")
-    for _, model := range models {
-        var count int64
-        debugDB.Model(model).Count(&count)
-        log.Printf("Table %T now has %d records", model, count)
-    }
-
-    return nil
+	log.Println("✅ Auto migration completed")
+	return nil
 }

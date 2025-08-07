@@ -1,21 +1,24 @@
-import 'package:frontend/domain/entities/user.dart';
 
-class LoginModel extends UserEntity {
-  const LoginModel({required int userId, required String accessToken})
-    : super(
-        id: userId,
-        googleId: accessToken, // kita gunakan field ini untuk menyimpan token
-      );
+class LoginModel {
+  final int userId;
+  final String accessToken;
+
+  const LoginModel({
+    required this.userId,
+    required this.accessToken,
+  });
 
   factory LoginModel.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] ?? {};
     return LoginModel(
-      userId: data['user_id'],
-      accessToken: data['access_token'],
+      userId: json['user_id'],
+      accessToken: json['access_token'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'user_id': id, 'access_token': googleId};
+    return {
+      'user_id': userId,
+      'access_token': accessToken,
+    };
   }
 }

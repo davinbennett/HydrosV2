@@ -25,13 +25,13 @@ class GoRouterRefreshStream extends ChangeNotifier {
 
 
 final mainRouterProvider = Provider<GoRouter>((ref) {
-  final authStatus = ref.watch(authProvider);
+  final authStatus = ref.watch(statusLoginProvider);
 
   return GoRouter(
     initialLocation: '/splash',
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(
-      ref.watch(authProvider.notifier).stream,
+      ref.watch(statusLoginProvider.notifier).stream,
     ),
     redirect: (context, state) {
       final isSplash = state.name == 'splash';

@@ -19,17 +19,8 @@ func ContinueWithGoogle(c *gin.Context) {
 	}
 
 	accessToken, userID, err := services.ContinueWithGoogle(req.IDToken)
-	if err != nil {
-		switch err {
-		case utils.ErrInvalidGoogleToken:
-			utils.UnauthorizedResponse(c, "Google authentication failed.")
-		case utils.ErrUserCreationFailed:
-			utils.InternalServerErrorResponse(c, "Unable to create user.")
-		case utils.ErrTokenGeneration:
-			utils.InternalServerErrorResponse(c, "Token generation failed.")
-		default:
-			utils.InternalServerErrorResponse(c, "Something went wrong.")
-		}
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -52,15 +43,8 @@ func LoginWithEmail(c *gin.Context) {
 	}
 
 	accessToken, userID, err := services.LoginWithEmail(req.Email, req.Password)
-	if err != nil {
-		switch err {
-		case utils.ErrEmailNotRegistered, utils.ErrInvalidPassword:
-			utils.UnauthorizedResponse(c, "Incorrect email or password.")
-		case utils.ErrLoginWithGoogle:
-			utils.UnauthorizedResponse(c, "This email is registered via Google. Please log in with Google.")
-		default:
-			utils.InternalServerErrorResponse(c, "Something went wrong. Please try again later.")
-		}
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -81,8 +65,8 @@ func RequestOTP(c *gin.Context) {
 		return
 	}
 
-	if err := services.SendOTP(req.Email); err != nil {
-		utils.InternalServerErrorResponse(c, "Failed to send OTP.")
+	if err := services.SendOTP(req.Email); err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -114,7 +98,7 @@ func RegisterWithEmail(c *gin.Context) {
 	var req struct {
 		Username string `json:"username" binding:"required"`
 		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=8"`
+		Password string `json:"password" binding:"required,min=8,alphanum"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -124,7 +108,7 @@ func RegisterWithEmail(c *gin.Context) {
 
 	accessToken, userID, err := services.RegisterWithEmail(req.Username, req.Email, req.Password)
 	if err != "" {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -145,8 +129,8 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	if err := services.ResetPassword(req.Email, req.NewPassword); err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err := services.ResetPassword(req.Email, req.NewPassword); err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 

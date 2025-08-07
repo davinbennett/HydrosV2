@@ -7,6 +7,7 @@ environment:
   sdk: ^3.7.0
 
 dependencies:
+  connectivity_plus: ^6.1.4
   dio: ^5.8.0+1
   fluentui_system_icons: ^1.1.273
   flutter:
@@ -39,6 +40,7 @@ flutter:
     - lib/assets/images/splash.png
     - lib/assets/images/login.png
     - lib/assets/icons/google.svg
+    - .env
   fonts:
     - family: Poppins
       fonts:

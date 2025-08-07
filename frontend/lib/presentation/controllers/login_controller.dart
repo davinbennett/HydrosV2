@@ -1,43 +1,55 @@
-import 'dart:developer';
-
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/domain/usecase/auth/login_with_email.dart';
+import 'package:frontend/domain/usecase/auth/login_with_google.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
 
-final loginControllerProvider = ChangeNotifierProvider<LoginController>((ref) {
-  return LoginController(ref);
-});
+class LoginController extends StateNotifier<AuthStatus> {
+  final LoginWithEmailUseCase loginEmailUsecase;
+  final LoginWithGoogleUseCase loginGoogleUsecase;
 
-class LoginController extends ChangeNotifier {
-  final Ref ref;
+  LoginController({
+    required this.loginEmailUsecase,
+    required this.loginGoogleUsecase,
+  }) : super(AuthStatus.unauthenticated);
 
-  LoginController(this.ref);
+  Future<String?> loginEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = AuthStatus.loading;
 
-  final _formKey = GlobalKey<FormState>();
-  GlobalKey<FormState> get formKey => _formKey;
+    try {
+      final result = await loginEmailUsecase.execute(email, password);
 
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+      await SecureStorage.saveAccessToken(result.accessToken);
+      await SecureStorage.saveUserId(result.userId.toString());
 
-  bool isLoading = false;
-
-  Future<void> login() async {
-    final isValid = formKey.currentState?.validate() ?? false;
-    if (!isValid) return;
-
-    final email = emailController.text;
-    final password = passwordController.text;
-
-    ref.read(authProvider.notifier);
-
-    log('Login with email: $email, password: $password');
+      state = AuthStatus.authenticated;
+      return null;
+    } catch (e) {
+      state = AuthStatus.unauthenticated;
+      return e.toString().isNotEmpty ? e.toString() : 'Unknown error occurred.';
+    }
   }
 
+  Future<void> loginGoogle({required String googleId}) async {
+    state = AuthStatus.loading;
+    try {
+      final result = await loginGoogleUsecase.execute(googleId);
 
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
+      await SecureStorage.saveAccessToken(result.accessToken);
+      await SecureStorage.saveUserId(result.userId as String);
+
+      state = AuthStatus.authenticated;
+    } catch (e) {
+      state = AuthStatus.unauthenticated;
+    }
+  }
+
+  // ! NANTI PINDAH LOGOUT KE LOGOUTCONTROLLER
+  Future<void> logout() async {
+    await SecureStorage.clearAll();
+    state = AuthStatus.unauthenticated;
   }
 }
