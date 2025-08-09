@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:frontend/core/errors/exception.dart';
 import 'package:frontend/data/models/auth.dart';
 import 'package:frontend/infrastructure/dio/dio_client.dart';
 
@@ -27,8 +26,7 @@ class AuthApi {
           throw 'Connection timeout. Please try again.';
 
         case DioExceptionType.connectionError:
-          throw 
-            'Unable to connect to the server. Please check your internet connection.';
+          throw 'Unable to connect to the server. Please check your internet connection.';
 
         case DioExceptionType.badResponse:
           final message = e.response?.data['message'];
@@ -50,9 +48,7 @@ class AuthApi {
     try {
       final response = await _dio.post(
         '/auth/continue-google',
-        data: {
-          'id_token': idToken,
-        },
+        data: {'id_token': idToken},
       );
 
       final data = response.data['data'];
@@ -83,18 +79,15 @@ class AuthApi {
   }
 
   // Signup email & password
-  Future<SignupModel> signupWithEmail({
-    required String email,
-    required String password,
-  }) async {
+  Future<String> signupWithEmail({required String email}) async {
     try {
       final response = await _dio.post(
-        '/auth/signup-email',
-        data: {'email': email, 'password': password},
+        '/auth/request-otp',
+        data: {'email': email},
       );
 
-      final data = response.data['data'];
-      return SignupModel.fromJson(data);
+      final message = response.data['data'];
+      return message;
     } on DioException catch (e) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
@@ -103,8 +96,7 @@ class AuthApi {
           throw 'Connection timeout. Please try again.';
 
         case DioExceptionType.connectionError:
-          throw 
-            'Unable to connect to the server. Please check your internet connection.';
+          throw 'Unable to connect to the server. Please check your internet connection.';
 
         case DioExceptionType.badResponse:
           final message = e.response?.data['message'];
@@ -118,42 +110,6 @@ class AuthApi {
       }
     } catch (e) {
       throw 'An unknown error occurred.';
-    }
-  }
-
-  // Signup Google
-  Future<SignupModel> signupWithGoogle({required String idToken}) async {
-    try {
-      final response = await _dio.post(
-        '/auth/continue-google',
-        data: {
-          'id_token': idToken,
-        },
-      );
-
-      final data = response.data['data'];
-      return SignupModel.fromJson(data);
-    } on DioException catch (e) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-          throw TimeoutException();
-        case DioExceptionType.receiveTimeout:
-        case DioExceptionType.sendTimeout:
-          throw TimeoutException();
-        case DioExceptionType.connectionError:
-          throw NetworkException();
-        case DioExceptionType.badResponse:
-          if (e.response?.statusCode == 404) {
-            throw NotFoundException();
-          }
-          throw ServerException(
-            e.response?.statusMessage ?? 'Kesalahan respons',
-          );
-        default:
-          throw UnknownException(e.message ?? 'Kesalahan tidak diketahui');
-      }
-    } catch (_) {
-      throw UnknownException();
     }
   }
 }

@@ -28,6 +28,5 @@ final signUpControllerProvider =
 
       return SignupController(
         signupEmailUsecase: SignupWithEmailUseCase(authRepository),
-        signupGoogleUsecase: SignupWithGoogleUseCase(authRepository),
       );
     });

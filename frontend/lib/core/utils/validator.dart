@@ -1,7 +1,7 @@
 class AppValidator {
-  static String? required(String? value, {String? fieldName}) {
+  static String? usernameRequired(String? value, {String? fieldName}) {
     if (value == null || value.trim().isEmpty) {
-      return '${fieldName ?? 'This field'} is required';
+      return '${fieldName ?? 'Username'} is required';
     }
     return null;
   }
@@ -31,6 +31,16 @@ class AppValidator {
       return 'Password must contain both letters and numbers';
     }
 
+    return null;
+  }
+
+  static String? confirmPassword(String? value, String? password) {
+    if (value == null || value.isEmpty) {
+      return 'Confirm password is required';
+    }
+    if (value != password) {
+      return 'Passwords do not match';
+    }
     return null;
   }
 

@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:frontend/core/themes/element_size.dart';
 import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
-import 'package:frontend/core/utils/validator.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
-import 'package:frontend/presentation/providers/auth_provider.dart';
-import 'package:frontend/presentation/widgets/global/button.dart';
 
 class HomeScreen extends ConsumerWidget {
   HomeScreen({super.key});
@@ -41,6 +36,7 @@ class HomeScreen extends ConsumerWidget {
         systemNavigationBarColor:
             mq.isPortrait ? AppColors.secondary : AppColors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarColor: Colors.transparent
       ),
     );
 

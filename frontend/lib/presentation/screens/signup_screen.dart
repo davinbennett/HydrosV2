@@ -27,7 +27,7 @@ class SignUpScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mq = MediaQueryHelper.of(context);
-    final authStatus = ref.watch(loginControllerProvider);
+    final authStatus = ref.watch(signUpControllerProvider);
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
@@ -40,28 +40,47 @@ class SignUpScreen extends ConsumerWidget {
 
     // CONTROLLER
     void handleSignUp(BuildContext context) async {
-      // final isValid = _formKey.currentState?.validate() ?? false;
+      final isValid = _formKey.currentState?.validate() ?? false;
 
-      // if (!isValid) return;
+      if (!isValid) return;
 
-      // final controller = ref.read(signUpControllerProvider.notifier);
+      final controller = ref.read(signUpControllerProvider.notifier);
 
-      // final errorMessage = await controller.signupEmail(
-      //   email: emailController.text.trim(),
-      //   password: passwordController.text.trim(),
-      // );
+      final errorMessage = await controller.signupEmail(
+        email: emailController.text.trim(),
+      );
 
-      // if (!context.mounted) return;
+      if (!context.mounted) return;
 
-      // if (errorMessage != null) {
-      //   ScaffoldMessenger.of(
-      //     context,
-      //   ).showSnackBar(SnackBar(content: Text(errorMessage)));
-      // } else {
-      //   // Login sukses → arahkan ke halaman lain jika perlu
-      //   // Navigator.pushReplacementNamed(context, '/home');
-      //   context.go('/home');
-      // }
+      if (errorMessage != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      } else {
+        context.push(
+          '/verify-email',
+          extra: {
+            'email': emailController.text.trim(),
+            'password': passwordController.text.trim(),
+            'username': usernameController.text.trim(),
+          },
+        );
+      }
+    }
+
+    void handleGoogleLogin(BuildContext context) async {
+      final controller = ref.read(loginControllerProvider.notifier);
+      final errorMessage = await controller.loginWithGoogle();
+
+      if (!context.mounted) return;
+
+      if (errorMessage != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      } else {
+        context.go('/home');
+      }
     }
 
     return Scaffold(
@@ -138,6 +157,7 @@ class SignUpScreen extends ConsumerWidget {
                               label: 'Username',
                               icon: Icons.people_alt_outlined,
                               controller: usernameController,
+                              validator: AppValidator.usernameRequired,
                             ),
 
                             // Email
@@ -163,7 +183,10 @@ class SignUpScreen extends ConsumerWidget {
                               icon: Icons.lock_outline,
                               isPassword: true,
                               controller: confirmPasswordController,
-                              validator: AppValidator.password,
+                              validator: (value) => AppValidator.confirmPassword(
+                                passwordController.text,
+                                value,
+                              ),
                             ),
                           ],
                         ),
@@ -205,7 +228,7 @@ class SignUpScreen extends ConsumerWidget {
                             // Google Button
                             ButtonWidget(
                               text: "Google",
-                              onPressed: () {},
+                              onPressed: () => handleGoogleLogin(context),
                               svgAsset: SvgPicture.asset(
                                 'lib/assets/icons/google.svg',
                                 width: AppElementSize.m,

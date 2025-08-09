@@ -56,8 +56,6 @@ class LoginScreen extends ConsumerWidget {
           context,
         ).showSnackBar(SnackBar(content: Text(errorMessage)));
       } else {
-        // Login sukses → arahkan ke halaman lain jika perlu
-        // Navigator.pushReplacementNamed(context, '/home');
         context.go('/home');
       }
     }
@@ -73,8 +71,6 @@ class LoginScreen extends ConsumerWidget {
           context,
         ).showSnackBar(SnackBar(content: Text(errorMessage)));
       } else {
-        // Login sukses → arahkan ke halaman lain jika perlu
-        // Navigator.pushReplacementNamed(context, '/home');
         context.go('/home');
       }
     }
