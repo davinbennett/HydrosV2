@@ -1,7 +1,7 @@
 class UserEntity {
   final int? id;
   final String? googleId;
-  final String? name;
+  final String? username;
   final String? email;
   final String? profilePicture;
   final String? password;
@@ -11,7 +11,7 @@ class UserEntity {
   const UserEntity({
     this.id,
     this.googleId,
-    this.name,
+    this.username,
     this.email,
     this.profilePicture,
     this.password,

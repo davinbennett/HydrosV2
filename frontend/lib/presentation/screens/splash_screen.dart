@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/core/themes/colors.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,6 +21,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     super.initState();
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(seconds: 1));
@@ -40,6 +43,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    // ! delete secure storage sementara
+    // Future.microtask(() => SecureStorage.clearAll());
+
+
     return Scaffold(
       extendBody: true,
       body: Container(

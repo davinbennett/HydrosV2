@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/domain/usecase/auth/login_with_email.dart';
-import 'package:frontend/domain/usecase/auth/login_with_google.dart';
+import 'package:frontend/domain/usecase/auth/login.dart';
+import 'package:frontend/domain/usecase/auth/signup.dart';
 import 'package:frontend/presentation/controllers/login_controller.dart';
+import 'package:frontend/presentation/controllers/signup_controller.dart';
 import 'package:frontend/presentation/controllers/splash_controller.dart';
 import 'package:frontend/presentation/providers/injection.dart';
 
@@ -18,5 +19,15 @@ final loginControllerProvider =
       return LoginController(
         loginEmailUsecase: LoginWithEmailUseCase(authRepository),
         loginGoogleUsecase: LoginWithGoogleUseCase(authRepository),
+      );
+    });
+
+final signUpControllerProvider =
+    StateNotifierProvider<SignupController, AuthStatus>((ref) {
+      final authRepository = ref.read(authRepositoryProvider);
+
+      return SignupController(
+        signupEmailUsecase: SignupWithEmailUseCase(authRepository),
+        signupGoogleUsecase: SignupWithGoogleUseCase(authRepository),
       );
     });

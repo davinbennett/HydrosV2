@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "518776905225",
+    "project_id": "hydros-v2-27864",
+    "storage_bucket": "hydros-v2-27864.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:518776905225:android:9bc9867742374e369222d8",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "518776905225-06ka1dmbioqp5qpir3i1ocna6dgfjr3u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.frontend",
+            "certificate_hash": "64f70992100e0f3bcfa7a050926e9fed24ed2ff5"
+          }
+        },
+        {
+          "client_id": "518776905225-5kssda9ju4dkm42orlek36roo56ukcnc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYSds1RhQjAQLvKuUgu-3k9MGtPsLORK4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "518776905225-5kssda9ju4dkm42orlek36roo56ukcnc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

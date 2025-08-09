@@ -5,7 +5,7 @@ class UserModel extends UserEntity {
   const UserModel({
     super.id,
     super.googleId,
-    super.name,
+    super.username,
     super.email,
     super.profilePicture,
     super.createdAt,
@@ -16,7 +16,7 @@ class UserModel extends UserEntity {
     return UserModel(
       id: json['id'],
       googleId: json['google_id'],
-      name: json['name'],
+      username: json['name'],
       email: json['email'],
       profilePicture: json['profile_picture'],
       createdAt:
@@ -34,7 +34,7 @@ class UserModel extends UserEntity {
     return {
       'id': id,
       'google_id': googleId,
-      'name': name,
+      'name': username,
       'email': email,
       'profile_picture': profilePicture,
       'created_at': createdAt?.toIso8601String(),

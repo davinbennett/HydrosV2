@@ -32,6 +32,7 @@ class LoginScreen extends ConsumerWidget {
         systemNavigationBarColor:
             mq.isPortrait ? AppColors.secondary : AppColors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarColor: Colors.transparent
       ),
     );
 
@@ -47,6 +48,23 @@ class LoginScreen extends ConsumerWidget {
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
+
+      if (!context.mounted) return;
+
+      if (errorMessage != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      } else {
+        // Login sukses → arahkan ke halaman lain jika perlu
+        // Navigator.pushReplacementNamed(context, '/home');
+        context.go('/home');
+      }
+    }
+
+    void handleGoogleLogin(BuildContext context) async {
+      final controller = ref.read(loginControllerProvider.notifier);
+      final errorMessage = await controller.loginWithGoogle();
 
       if (!context.mounted) return;
 
@@ -173,7 +191,7 @@ class LoginScreen extends ConsumerWidget {
             
                         // ! BOTTOM
                         Column(
-                          spacing: AppSpacingSize.s,
+                          spacing: AppSpacingSize.l,
                           children: [
                             // Sign In button
                             ButtonWidget(
@@ -206,7 +224,7 @@ class LoginScreen extends ConsumerWidget {
                             // Google Button
                             ButtonWidget(
                               text: "Google",
-                              onPressed: () {},
+                              onPressed: () => handleGoogleLogin(context),
                               svgAsset: SvgPicture.asset(
                                 'lib/assets/icons/google.svg',
                                 width: AppElementSize.m,
@@ -230,7 +248,7 @@ class LoginScreen extends ConsumerWidget {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    // Navigate to signup
+                                    context.go('/signup');
                                   },
                                   style: TextButton.styleFrom(
                                     padding: EdgeInsets.zero,

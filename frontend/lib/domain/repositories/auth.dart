@@ -5,5 +5,7 @@ import 'package:frontend/data/models/auth.dart';
 
 abstract class AuthRepository {
   Future<LoginModel> loginWithEmail(String email, String password);
-  Future<LoginModel> loginWithGoogle(String idToken);
+  Future<LoginModel> loginWithGoogle();
+  Future<SignupModel> signupWithEmail(String email, String password, String username, String confirmPassword);
+  Future<SignupModel> signupWithGoogle(String idToken);
 }

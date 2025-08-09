@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
@@ -14,9 +15,10 @@ import (
 )
 
 func ContinueWithGoogle(idToken string) (string, uint, string) {
-	payload, err := idtoken.Validate(context.Background(), idToken, "")
+	audience := os.Getenv("GOOGLE_CLIENT_ID")
+	payload, err := idtoken.Validate(context.Background(), idToken, audience)
 	if err != nil {
-		return "", 0, "Something went wrong with the token."
+		return "", 0, "Something went wrong continue with Google."
 	}
 
 	email := payload.Claims["email"].(string)

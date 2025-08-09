@@ -7,13 +7,25 @@ import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
+import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 
 class HomeScreen extends ConsumerWidget {
   HomeScreen({super.key});
+  
+  Future<void> _logSecureStorage() async {
+    final token = await SecureStorage.getAccessToken();
+    final userId = await SecureStorage.getUserId();
+    final deviceId = await SecureStorage.getDeviceId();
+
+    logger.i('🔐 Access Token: $token');
+    logger.i('👤 User ID: $userId');
+    logger.i('📱 Device ID: $deviceId');
+  }
 
   // Form
   final _formKey = GlobalKey<FormState>();
@@ -31,6 +43,8 @@ class HomeScreen extends ConsumerWidget {
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
     );
+
+    _logSecureStorage();
 
     return Scaffold(
       body: SingleChildScrollView(
