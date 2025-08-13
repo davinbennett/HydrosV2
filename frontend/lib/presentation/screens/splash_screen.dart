@@ -3,10 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/core/themes/colors.dart';
-import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
+import 'package:frontend/presentation/providers/global_auth_provider.dart';
+import 'package:frontend/presentation/states/global_auth_state.dart';
 import 'package:go_router/go_router.dart';
 
-// Ganti StatefulWidget jadi ConsumerStatefulWidget
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,19 +21,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     super.initState();
 
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(statusBarColor: Colors.transparent),
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: AppColors.secondary,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(seconds: 1));
 
       if (!mounted) return;
-      
-      final authStatus = ref.read(statusLoginProvider);
 
-      if (authStatus == AuthStatus.authenticated) {
+      final state = ref.read(globalStateProvider);
+
+      if (state is GlobalAuthenticated) {
         context.go('/home');
-      } else {
+      } else if (state is GlobalUnauthenticated) {
         context.go('/login');
       }
     });
@@ -41,7 +46,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     // ! delete secure storage sementara
-    // Future.microtask(() => SecureStorage.clearAll());
+    Future.microtask(() => SecureStorage.clearAll());
 
     return Scaffold(
       body: Container(

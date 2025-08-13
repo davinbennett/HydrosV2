@@ -12,7 +12,7 @@ func AuthRoute(rg *gin.RouterGroup) {
 		auth.POST("/continue-google", controllers.ContinueWithGoogle)
 		auth.POST("/login-email", controllers.LoginWithEmail)
 
-		
+				
 		auth.POST("/request-otp", controllers.RequestOTP)
 		auth.POST("/verify-otp", controllers.VerifyOTP)
 		auth.POST("/register-email", controllers.RegisterWithEmail)

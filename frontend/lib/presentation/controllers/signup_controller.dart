@@ -1,27 +1,75 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/domain/usecase/auth/register_with_email.dart';
 import 'package:frontend/domain/usecase/auth/signup.dart';
-import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
+import 'package:frontend/presentation/states/signup_state.dart';
 
-class SignupController extends StateNotifier<AuthStatus> {
+class SignupController extends StateNotifier<SignupState> {
   final SignupWithEmailUseCase signupEmailUsecase;
-  
-  SignupController({
-    required this.signupEmailUsecase,
-  }) : super(AuthStatus.unauthenticated);
 
-  Future<String?> signupEmail({
+  SignupController({required this.signupEmailUsecase}) : super(SignupInitial());
+
+  Future<Map<String, String>?> signupEmail({
     required String email,
+    String? password,
+    String? username,
   }) async {
-    state = AuthStatus.loading;
+    state = SignupLoading(email: email,
+      password: password,
+      username: username,);
 
     try {
       await signupEmailUsecase.execute(email);
 
-      state = AuthStatus.authenticated;
-      return null;
+      state = SignupSuccess(email: email,
+      password: password,
+      username: username,);
     } catch (e) {
-      state = AuthStatus.unauthenticated;
-      return e.toString().isNotEmpty ? e.toString() : 'Unknown error occurred.';
+      state = SignupFailure(
+        e.toString().isNotEmpty ? e.toString() : 'Unknown error occurred.',
+        email: email,
+        password: password,
+        username: username,
+      );
     }
+    return null;
+  }
+}
+
+class RegisterWithEmailController
+    extends StateNotifier<RegisterWithEmailState> {
+  final RegisterWithEmailUseCase registerWithEmailUsecase;
+
+  RegisterWithEmailController({required this.registerWithEmailUsecase})
+    : super(RegisterWithEmailInitial());
+
+  Future<String?> registerWithEmail({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    state = RegisterWithEmailLoading();
+
+    try {
+      final result = await registerWithEmailUsecase.execute(
+        username,
+        email,
+        password,
+      );
+
+      if (result.accessToken.isEmpty || result.userId == 0) {
+        return null;
+      }
+
+      await SecureStorage.saveAccessToken(result.accessToken);
+      await SecureStorage.saveUserId(result.userId.toString());
+
+      state = RegisterWithEmailSuccess();
+    } catch (e) {
+      state = RegisterWithEmailFailure(
+        e.toString().isNotEmpty ? e.toString() : 'Unknown error occurred.',
+      );
+    }
+    return null;
   }
 }

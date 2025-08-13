@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:frontend/presentation/providers/global_auth_provider.dart';
 import 'package:frontend/presentation/screens/splash_screen.dart';
+import 'package:frontend/presentation/states/global_auth_state.dart';
 import 'package:go_router/go_router.dart';
 import 'app_nav.dart';
 import 'auth_nav.dart';
@@ -25,19 +26,27 @@ class GoRouterRefreshStream extends ChangeNotifier {
 
 
 final mainRouterProvider = Provider<GoRouter>((ref) {
-  final authStatus = ref.watch(statusLoginProvider);
-
   return GoRouter(
     initialLocation: '/splash',
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(
-      ref.watch(statusLoginProvider.notifier).stream,
+      ref.watch(globalStateProvider.notifier).stream,
     ),
     redirect: (context, state) {
-      final isSplash = state.name == 'splash';
+      final globalState = ref.read(globalStateProvider);
 
-      if (authStatus == AuthStatus.loading) {
+      final isSplash = state.matchedLocation == '/splash';
+
+      if (globalState is GlobalLoading || globalState is GlobalInitial) {
         return isSplash ? null : '/splash';
+      }
+
+      if (globalState is GlobalAuthenticated) {
+        return isSplash ? '/home' : null;
+      }
+
+      if (globalState is GlobalUnauthenticated) {
+        return isSplash ? '/login' : null;
       }
 
       return null;

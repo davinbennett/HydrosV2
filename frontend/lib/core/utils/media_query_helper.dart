@@ -17,7 +17,7 @@ class MediaQueryHelper {
 
   double get statusBarHeight => _mq.padding.top;
 
-  double get safeHeight => _mq.size.height - _mq.padding.vertical;
+  double get safeHeight => _mq.size.height - (notchHeight*1.5);
   double get safeWidth => _mq.size.width - _mq.padding.horizontal;
 
   EdgeInsets get viewPadding => _mq.viewPadding;

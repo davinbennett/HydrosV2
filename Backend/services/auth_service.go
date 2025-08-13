@@ -74,7 +74,17 @@ func LoginWithEmail(email, password string) (string, uint, string) {
 }
 
 
-func SendOTP(email string) string {
+func SendOTP(email string, isFrom string) string {
+	if isFrom == "signup" {
+		exists, err := repositories.IsEmailExists(email)
+		if err != "" {
+			return err
+		}
+		if exists {
+			return "email already registered"
+		}
+	}
+
 	otp, _ := utils.GenerateOTP()
 	hashedOTP, err := utils.HashPassword(otp)
 	if err != nil {
@@ -143,15 +153,7 @@ func RegisterWithEmail(username, email, password string) (string, uint, string) 
 	// Ambil field 'verified' dari Redis hash
 	verified, err := config.RedisClient.HGet(config.RedisCtx, key, "verified").Result()
 	if err != nil || verified != "1" {
-		return "", 0, "Email has not been verified via OTP"
-	}
-
-	existingUser, errStr := repositories.GetUserByEmail(email)
-	if existingUser != nil {
-		if existingUser.GoogleID != nil {
-			return "", 0, "Email is already registered with Google."
-		}
-		return "", 0, "Email is already registered."
+		return "", 0, ""
 	}
 
 	hashedPassword, err := utils.HashPassword(password)

@@ -58,6 +58,7 @@ func LoginWithEmail(c *gin.Context) {
 func RequestOTP(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
+		IsFrom string `json:"is_from" binding:"omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -65,7 +66,12 @@ func RequestOTP(c *gin.Context) {
 		return
 	}
 
-	if err := services.SendOTP(req.Email); err != "" {
+	isFrom := "default"
+	if req.IsFrom != "" {
+		isFrom = req.IsFrom
+	}
+
+	if err := services.SendOTP(req.Email, isFrom); err != "" {
 		utils.InternalServerErrorResponse(c, err)
 		return
 	}
@@ -91,18 +97,21 @@ func VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, "OTP verified successfully.")
+	utils.SuccessResponse(c, gin.H{
+		"access_token": accessToken,
+		"user_id":      userID,
+	})
 }
 
 func RegisterWithEmail(c *gin.Context) {
 	var req struct {
 		Username string `json:"username" binding:"required"`
 		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=8,alphanum"`
+		Password string `json:"password" binding:"required,min=6,alphanum"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequestResponse(c, "Invalid request format.")
+		utils.BadRequestResponse(c, "")
 		return
 	}
 

@@ -34,4 +34,17 @@ class AuthImpl implements AuthRepository {
   ) {
     return api.signupWithEmail(email: email);
   }
+
+  @override
+  Future<String> verifyOtp(
+    String email,
+    String otp,
+  ) {
+    return api.verifyOtp(email: email, otp: otp);
+  }
+
+  @override
+  Future<LoginModel> registerWithEmail(String username, String email, String password) {
+    return api.registerWithEmail(username: username, email: email, password: password);
+  }
 }

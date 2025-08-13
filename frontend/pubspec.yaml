@@ -28,6 +28,8 @@ dependencies:
   jwt_decoder: ^2.0.1
   logger: ^2.6.1
   logging: ^1.3.0
+  otp_timer_button: ^1.1.1
+  pinput: ^5.0.1
   riverpod_annotation: ^2.6.1
 
 dev_dependencies:
@@ -44,6 +46,7 @@ flutter:
   assets:
     - lib/assets/images/splash.png
     - lib/assets/images/login.png
+    - lib/assets/images/success_signup.png
     - lib/assets/icons/google.svg
     - .env
   fonts:
