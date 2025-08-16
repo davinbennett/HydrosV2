@@ -46,7 +46,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     // ! delete secure storage sementara
-    Future.microtask(() => SecureStorage.clearAll());
+    // Future.microtask(() => SecureStorage.clearAll());
 
     return Scaffold(
       body: Container(

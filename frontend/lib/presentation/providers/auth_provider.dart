@@ -1,13 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/domain/usecase/auth/login.dart';
+import 'package:frontend/domain/usecase/auth/new_password.dart';
 import 'package:frontend/domain/usecase/auth/register_with_email.dart';
+import 'package:frontend/domain/usecase/auth/reset_password.dart';
 import 'package:frontend/domain/usecase/auth/signup.dart';
 import 'package:frontend/domain/usecase/auth/verify_otp.dart';
 import 'package:frontend/presentation/controllers/login_controller.dart';
+import 'package:frontend/presentation/controllers/new_password_controller.dart';
+import 'package:frontend/presentation/controllers/reset_password_controller.dart';
 import 'package:frontend/presentation/controllers/signup_controller.dart';
 import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 import 'package:frontend/presentation/providers/injection.dart';
 import 'package:frontend/presentation/states/login_state.dart';
+import 'package:frontend/presentation/states/new_password_state.dart.dart';
+import 'package:frontend/presentation/states/reset_password_state.dart';
 import 'package:frontend/presentation/states/signup_state.dart';
 import 'package:frontend/presentation/states/verify_otp.dart';
 
@@ -26,7 +32,7 @@ final signUpControllerProvider =
       final authRepository = ref.read(authRepositoryProvider);
 
       return SignupController(
-        signupEmailUsecase: SignupWithEmailUseCase(authRepository),
+        signupEmailUsecase: SignupUseCase(authRepository),
       );
     });
 
@@ -45,5 +51,27 @@ final registerWithEmailControllerProvider =
 
       return RegisterWithEmailController(
         registerWithEmailUsecase: RegisterWithEmailUseCase(authRepository),
+      );
+    });
+
+final resetPasswordControllerProvider =
+    StateNotifierProvider<ResetPasswordController, ResetPasswordState>((
+      ref,
+    ) {
+      final authRepository = ref.read(authRepositoryProvider);
+
+      return ResetPasswordController(
+        resetPasswordUsecase: ResetPasswordUseCase(authRepository),
+      );
+    });
+
+final newPasswordControllerProvider =
+    StateNotifierProvider<NewPasswordController, NewPasswordState>((
+      ref,
+    ) {
+      final authRepository = ref.read(authRepositoryProvider);
+
+      return NewPasswordController(
+        newPasswordUsecase: NewPasswordUseCase(authRepository),
       );
     });

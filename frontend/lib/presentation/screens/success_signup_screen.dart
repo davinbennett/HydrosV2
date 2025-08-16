@@ -4,31 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
-import 'package:frontend/core/themes/font_weight.dart';
-import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
-import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:go_router/go_router.dart';
 
 class SuccessSignUpScreen extends ConsumerWidget {
-  SuccessSignUpScreen({super.key});
-
-  Future<void> _logSecureStorage() async {
-    final token = await SecureStorage.getAccessToken();
-    final userId = await SecureStorage.getUserId();
-    final deviceId = await SecureStorage.getDeviceId();
-
-    logger.i('🔐 Access Token: $token');
-    logger.i('👤 User ID: $userId');
-    logger.i('📱 Device ID: $deviceId');
-  }
+  const SuccessSignUpScreen({super.key});
 
   // Form
-  final _formKey = GlobalKey<FormState>();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mq = MediaQueryHelper.of(context);
@@ -41,8 +24,6 @@ class SuccessSignUpScreen extends ConsumerWidget {
         statusBarColor: Colors.transparent,
       ),
     );
-
-    _logSecureStorage();
 
     return Scaffold(
       body: Container(

@@ -3,6 +3,7 @@ package repositories
 import (
 	"main/config"
 	"main/models"
+	"main/utils"
 
 	"gorm.io/gorm"
 )
@@ -34,10 +35,17 @@ func GetUserByEmail(email string) (*models.User, string) {
 	return &user, ""
 }
 
-func UpdatePasswordByEmail(email, hashedPassword string) string {
+func UpdatePasswordByEmail(email, newPassword, hashedPassword string) string {
 	var user models.User
 	if err := config.PostgresDB.Where("email = ?", email).First(&user).Error; err != nil {
 		return "User not found."
+	}
+
+	// Cek apakah password baru sama dengan password lama
+	if user.Password != nil {
+		if utils.CheckPasswordHash(newPassword, *user.Password) {
+			return "New password must be different from the old password."
+		}
 	}
 
 	user.Password = &hashedPassword

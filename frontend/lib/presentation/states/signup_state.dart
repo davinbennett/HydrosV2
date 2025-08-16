@@ -31,7 +31,6 @@ class SignupFailure extends SignupState {
 
 
 
-
 sealed class RegisterWithEmailState {}
 
 class RegisterWithEmailInitial extends RegisterWithEmailState {}

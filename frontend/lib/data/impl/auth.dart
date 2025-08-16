@@ -29,10 +29,11 @@ class AuthImpl implements AuthRepository {
   }
 
   @override
-  Future<String> signupWithEmail(
-    String email
+  Future<String> requestOtp(
+    String email,
+    String isFrom,
   ) {
-    return api.signupWithEmail(email: email);
+    return api.requestOtp(email: email, isFrom: isFrom);
   }
 
   @override
@@ -46,5 +47,10 @@ class AuthImpl implements AuthRepository {
   @override
   Future<LoginModel> registerWithEmail(String username, String email, String password) {
     return api.registerWithEmail(username: username, email: email, password: password);
+  }
+
+  @override
+  Future<String> newPassword(String email, String password) {
+    return api.newPassword(email: email, password: password);
   }
 }

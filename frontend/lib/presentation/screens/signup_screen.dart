@@ -10,6 +10,7 @@ import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:frontend/presentation/states/login_state.dart';
 import 'package:frontend/presentation/states/signup_state.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:frontend/presentation/widgets/global/text_form_field.dart';
@@ -30,6 +31,8 @@ class SignUpScreen extends ConsumerWidget {
     final mq = MediaQueryHelper.of(context);
     final signupState = ref.watch(signUpControllerProvider);
 
+    
+    // Listen Signup
     ref.listen<SignupState>(signUpControllerProvider, (previous, next) {
       if (next is SignupFailure) {
         ScaffoldMessenger.of(
@@ -44,6 +47,17 @@ class SignUpScreen extends ConsumerWidget {
             'username': usernameController.text.trim(),
           },
         );
+      }
+    });
+
+    // Listen Login
+    ref.listen<LoginState>(loginControllerProvider, (previous, next) {
+      if (next is LoginFailure) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.errorMessage)));
+      } else if (next is LoginSuccess) {
+        context.go('/home');
       }
     });
 

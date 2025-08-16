@@ -97,10 +97,7 @@ func VerifyOTP(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, gin.H{
-		"access_token": accessToken,
-		"user_id":      userID,
-	})
+	utils.SuccessResponse(c, "OTP verified successfully.")
 }
 
 func RegisterWithEmail(c *gin.Context) {
@@ -130,7 +127,7 @@ func RegisterWithEmail(c *gin.Context) {
 func ResetPassword(c *gin.Context) {
 	var req struct {
 		Email       string `json:"email" binding:"required,email"`
-		NewPassword string `json:"new_password" binding:"required,min=8"`
+		NewPassword string `json:"new_password" binding:"required,min=6"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -6,11 +6,13 @@ import 'package:frontend/data/models/auth.dart';
 abstract class AuthRepository {
   Future<LoginModel> loginWithEmail(String email, String password);
   Future<LoginModel> loginWithGoogle();
-  Future<String> signupWithEmail(String email);
+  Future<String> requestOtp(String email, String isFrom);
   Future<String> verifyOtp(String email, String otp);
   Future<LoginModel> registerWithEmail(
     String username,
     String email,
     String password,
   );
+  Future<String> newPassword(String email, String password);
+
 }

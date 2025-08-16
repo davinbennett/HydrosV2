@@ -5,7 +5,7 @@ import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/states/signup_state.dart';
 
 class SignupController extends StateNotifier<SignupState> {
-  final SignupWithEmailUseCase signupEmailUsecase;
+  final SignupUseCase signupEmailUsecase;
 
   SignupController({required this.signupEmailUsecase}) : super(SignupInitial());
 

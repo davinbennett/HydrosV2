@@ -163,11 +163,22 @@ class LoginScreen extends ConsumerWidget {
                                 minimumSize: Size(0, 0),
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                              child: Text(
-                                'Forgot password?',
-                                style: TextStyle(
-                                  color: AppColors.grayLight,
-                                  fontSize: AppFontSize.m,
+                              child: TextButton(
+                                onPressed: () {
+                                  context.go('/reset-password');
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size(0, 0),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Forgot Password?',
+                                  style: TextStyle(
+                                    color: AppColors.grayLight,
+                                    fontSize: AppFontSize.m,
+                                  ),
                                 ),
                               ),
                             ),

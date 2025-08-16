@@ -47,6 +47,8 @@ flutter:
     - lib/assets/images/splash.png
     - lib/assets/images/login.png
     - lib/assets/images/success_signup.png
+    - lib/assets/images/reset_your_password.png
+    - lib/assets/images/create_new_password.png
     - lib/assets/icons/google.svg
     - .env
   fonts:

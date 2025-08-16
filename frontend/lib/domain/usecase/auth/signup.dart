@@ -1,15 +1,16 @@
 import 'package:frontend/domain/repositories/auth.dart';
 
-class SignupWithEmailUseCase {
+class SignupUseCase {
   final AuthRepository repository;
 
-  SignupWithEmailUseCase(this.repository);
+  SignupUseCase(this.repository);
 
   Future<String> execute(
     String email,
   ) {
-    return repository.signupWithEmail(
+    return repository.requestOtp(
       email,
+      'signup',
     );
   }
 }

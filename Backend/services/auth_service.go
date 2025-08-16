@@ -81,7 +81,15 @@ func SendOTP(email string, isFrom string) string {
 			return err
 		}
 		if exists {
-			return "email already registered"
+			return err
+		}
+	}
+
+
+	if isFrom == "reset_password" {
+		_, err := repositories.IsEmailExists(email)
+		if err != "This email is already registered." {
+			return err
 		}
 	}
 
@@ -195,7 +203,7 @@ func ResetPassword(email, newPassword string) string {
 		return "Internal error while securing your password."
 	}
 
-	if err := repositories.UpdatePasswordByEmail(email, hashedPassword); err != "" {
+	if err := repositories.UpdatePasswordByEmail(email, newPassword, hashedPassword); err != "" {
 		return err
 	}
 

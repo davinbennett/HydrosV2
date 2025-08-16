@@ -3,18 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/themes/element_size.dart';
 import 'package:frontend/core/themes/radius_size.dart';
 import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/hide_email_address.dart';
-import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
 import 'package:frontend/presentation/states/signup_state.dart';
 import 'package:frontend/presentation/states/verify_otp.dart';
+import 'package:frontend/presentation/widgets/global/app_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:otp_timer_button/otp_timer_button.dart';
 import 'package:pinput/pinput.dart';
@@ -25,11 +24,13 @@ class VerifyOtpScreen extends ConsumerStatefulWidget {
     required this.email,
     this.password,
     this.username,
+    this.previousScreen,
   });
 
   final String email;
   final String? password;
   final String? username;
+  final String? previousScreen;
 
   @override
   ConsumerState<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
@@ -44,17 +45,15 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
   int _countdown = 30;
   bool canResend = false;
 
-  late String email;
-  String? password;
-  String? username;
+  late final String email = widget.email;
+  late final String? password = widget.password;
+  late final String? username = widget.username;
+  late final String? previousScreen = widget.previousScreen;
 
   @override
   void initState() {
     super.initState();
     startTimer();
-    password = widget.password;
-    email = widget.email;
-    username = widget.username;
   }
 
   @override
@@ -84,7 +83,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
         _countdown = 30;
         canResend = false;
       });
-      
+
       final signupState = ref.read(signUpControllerProvider);
       ref
           .read(signUpControllerProvider.notifier)
@@ -102,12 +101,16 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
     final signupState = ref.watch(signUpControllerProvider);
     final mq = MediaQueryHelper.of(context);
 
+    // cek dari reset-password atau signup
+    final previousScreen = ref.read(resetPasswordControllerProvider).previousScreen ?? '/signup';
+
     // Listen verify OTP
     ref.listen<VerifyOtpState>(verifyOtpControllerProvider, (previous, next) {
       if (next is VerifyOtpSuccess) {
-
-        if (ref.read(signUpControllerProvider).username != null && ref.read(signUpControllerProvider).password != null) {
-          // mode register
+        // register
+        if (ref.read(signUpControllerProvider).username != null &&
+            ref.read(signUpControllerProvider).password != null) {
+          
           ref
               .read(registerWithEmailControllerProvider.notifier)
               .registerWithEmail(
@@ -117,8 +120,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
               );
           context.go('/success-signup');
         } else {
-          // mode reset password
-          // context.go('/reset-password', extra: {'email': widget.email});
+          // reset password
+          context.go('/create-new-password', extra: {'email': widget.email});
         }
       } else if (next is VerifyOtpFailure) {
         ScaffoldMessenger.of(
@@ -135,8 +138,6 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
         statusBarColor: Colors.transparent,
       ),
     );
-
-    logger.i(email);
 
     return Scaffold(
       body: Stack(
@@ -160,27 +161,17 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                 child: Column(
                   children: [
                     Padding(
-                      padding: EdgeInsets.only(bottom: AppSpacingSize.xl),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            onTap: () => context.go('/signup'),
-                            child: Icon(
-                              Icons.arrow_back,
-                              size: AppElementSize.m,
-                            ),
-                          ),
-
-                          Text(
-                            "Verify Your OTP",
-                            style: TextStyle(
-                              fontSize: AppFontSize.l,
-                              fontWeight: AppFontWeight.semiBold,
-                            ),
-                          ),
-                          SizedBox(width: AppElementSize.m),
-                        ],
+                      padding: EdgeInsets.only(bottom: AppSpacingSize.l),
+                      child: AppBarWidget(
+                        type: AppBarType.back,
+                        title: "Verify Your OTP",
+                        onBack: () {
+                          if (previousScreen == 'reset-password') {
+                            context.go('/reset-password');
+                          } else {
+                            context.go('/signup');
+                          }
+                        },
                       ),
                     ),
                     Text(
@@ -204,7 +195,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           ),
                           TextSpan(
                             text:
-                                '${hideEmail(ref.read(signUpControllerProvider).email ?? '')}. ',
+                                '${hideEmail(ref.read(signUpControllerProvider).email ?? ref.read(resetPasswordControllerProvider).email!)}. ',
                             style: TextStyle(
                               fontSize: AppFontSize.m,
                               color: AppColors.orange,
@@ -234,7 +225,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                         }
                         return null;
                       },
-                      onCompleted: (pin)  {
+                      onCompleted: (pin) {
                         final controllerVerifyOtp = ref.read(
                           verifyOtpControllerProvider.notifier,
                         );
@@ -243,7 +234,6 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           email: email,
                           otp: pin.trim(),
                         );
-
                       },
                       defaultPinTheme: PinTheme(
                         width: 50,
@@ -319,21 +309,6 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                         ),
                       ],
                     ),
-                    // OtpTimerButton(
-                    //   controller: otpTimerController,
-                    //   onPressed: () => handleResendOtp(),
-                    //   text: Text(
-                    //     'Resend OTP',
-                    //     style: TextStyle(
-                    //       fontSize: AppFontSize.m,
-                    //       fontWeight: AppFontWeight.semiBold,
-                    //     ),
-                    //   ),
-                    //   duration: 30,
-                    //   buttonType: ButtonType.text_button,
-                    //   height: 30,
-                    //   textColor: AppColors.orange,
-                    // ),
                   ],
                 ),
               ),
