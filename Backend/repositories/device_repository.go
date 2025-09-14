@@ -6,52 +6,55 @@ import (
 
 )
 
-func GetAllDeviceIDs() ([]uint, error) {
+func GetAllDeviceIDs() ([]string, string) {
 	var devices []models.Device
 	err := config.PostgresDB.Select("id").Find(&devices).Error
 	if err != nil {
-		return nil, err
+		return nil, "Failed to get device IDs. Please try again later."
 	}
 
-	deviceIDs := make([]uint, len(devices))
+	deviceIDs := make([]string, len(devices))
 	for i, d := range devices {
 		deviceIDs[i] = d.ID
 	}
 
-	return deviceIDs, nil
+	return deviceIDs, ""
 }
 
-func UpdatePumpStatus(deviceID string, isOn bool) error {
+func UpdatePumpStatus(deviceID string, isOn bool) string {
 	var device models.Device
 	if err := config.PostgresDB.Where("device_id = ?", deviceID).First(&device).Error; err != nil {
-		return err
+		return "Device not found."
 	}
 
 	device.IsOn = isOn
-	return config.PostgresDB.Save(&device).Error
+	if err := config.PostgresDB.Save(&device).Error; err != nil {
+		return "Failed to update pump status. Please try again."
+	}
+	return ""
 }
 
-func GetLocation(deviceID string) (string, error) {
+func GetLocation(deviceID string) (string, string) {
 	var device models.Device
 	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
-		return "", err
+		return "", "Device not found."
 	}
-	return device.Location, nil
+	return device.Location, ""
 }
 
-func GetCoords(deviceID string) (float64, float64, error) {
+func GetCoords(deviceID string) (float64, float64, string) {
 	var device models.Device
 	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
-		return 0.0, 0.0, err
+		return 0.0, 0.0, "Device not found."
 	}
-	return device.Longitude, device.Latitude, nil
+	return device.Longitude, device.Latitude, ""
 }
 
-func AddPlant(deviceID, plantName string, progressPlan int, latitude, longitude float64, location string) error {
+func AddPlant(deviceID, plantName string, progressPlan int, latitude, longitude float64, location string) string {
 	var device models.Device
 
 	if err := config.PostgresDB.Where("id = ?", deviceID).First(&device).Error; err != nil {
-		return err
+		return "Device not found."
 	}
 
 	device.PlantName = &plantName
@@ -60,22 +63,28 @@ func AddPlant(deviceID, plantName string, progressPlan int, latitude, longitude 
 	device.Longitude = longitude
 	device.Location = location
 	
-	return config.PostgresDB.Save(&device).Error
+	if err := config.PostgresDB.Save(&device).Error; err != nil {
+		return "Failed to save plant information."
+	}
+	return ""
 }
 
-func GetPlantInfo(deviceID string) (string, int, int, error) {
+func GetPlantInfo(deviceID string) (string, int, int, string) {
 	var device models.Device
 	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
-		return "", 0.0, 0.0, err
+		return "", 0.0, 0.0, "Device not found."
 	}
-	return *device.PlantName, device.ProgressNow, device.ProgressPlan, nil
+	if device.PlantName == nil {
+		return "", device.ProgressNow, device.ProgressPlan, ""
+	}
+	return *device.PlantName, device.ProgressNow, device.ProgressPlan, ""
 }
 
-func UpdatePlant(deviceID string, plantName, location string, progressPlan int, latitude, longitude float64) error {
+func UpdatePlant(deviceID string, plantName, location string, progressPlan int, latitude, longitude float64) string {
 	var device models.Device
 
 	if err := config.PostgresDB.Where("id = ?", deviceID).First(&device).Error; err != nil {
-		return err
+		return "Device not found."
 	}
 
 	device.PlantName = &plantName
@@ -84,47 +93,59 @@ func UpdatePlant(deviceID string, plantName, location string, progressPlan int, 
 	device.Longitude = longitude
 	device.Location = location
 
-	return config.PostgresDB.Save(&device).Error
+	if err := config.PostgresDB.Save(&device).Error; err != nil {
+		return "Failed to update plant information."
+	}
+	return ""
 }
 
-func FindDeviceByCode(code string) (*models.Device, error) {
+func FindDeviceByCode(code string) (*models.Device, string) {
 	var device models.Device
 	if err := config.PostgresDB.Where("code = ?", code).First(&device).Error; err != nil {
-		return nil, err
+		return nil, "Device not found with the provided code."
 	}
-	return &device, nil
+	return &device, ""
 }
 
 // many2many pair
-func AddDeviceToUser(userID, deviceID uint) error {
+func AddDeviceToUser(userID uint, deviceID string) string {
 	var user models.User
 	if err := config.PostgresDB.First(&user, userID).Error; err != nil {
-		return err
+		return "User not found."
 	}
 
 	var device models.Device
 	if err := config.PostgresDB.First(&device, deviceID).Error; err != nil {
-		return err
+		return "Device not found."
 	}
 
-	return config.PostgresDB.Model(&user).Association("Devices").Append(&device)
+	if err := config.PostgresDB.Model(&user).Association("Devices").Append(&device); err != nil {
+		return "Failed to pair device with user."
+	}
+	return ""
 }
 
-func UnpairDevice(userID uint, deviceID uint) error {
+func UnpairDevice(userID uint, deviceID string) string {
 	var user models.User
 
 	if err := config.PostgresDB.Preload("Devices").First(&user, userID).Error; err != nil {
-		return err
+		return "User not found."
 	}
 
-	return config.PostgresDB.Model(&user).Association("Devices").Delete(&models.Device{ID: deviceID})
+	if err := config.PostgresDB.Model(&user).Association("Devices").Delete(&models.Device{ID: deviceID}); err != nil {
+		return "Failed to unpair device."
+	}
+	return ""
 }
 
-func UpdateSoilSettings(deviceID string, soilMin, soilMax int) error {
-	return config.PostgresDB.Model(&models.Device{}).
+func UpdateSoilSettings(deviceID string, soilMin, soilMax int) string {
+	if err := config.PostgresDB.Model(&models.Device{}).
 		Where("id = ?", deviceID).
 		Updates(map[string]interface{}{
 			"min_soil_setting": soilMin,
 			"max_soil_setting": soilMax,
-		}).Error
+		}).Error; err != nil {
+		return "Failed to update soil settings."
+	}
+	return ""
 }

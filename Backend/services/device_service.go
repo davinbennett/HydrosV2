@@ -2,14 +2,13 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
 	"main/config"
 	"main/infrastructure/mqtt"
 	"main/infrastructure/weather"
 	"main/repositories"
 )
 
-func ControlPump(deviceID string, isOn bool) error {
+func ControlPump(deviceID string, isOn bool) string {
 	command := "off"
 	if isOn {
 		command = "on"
@@ -21,75 +20,75 @@ func ControlPump(deviceID string, isOn bool) error {
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal payload: %w", err)
+		return "Failed to process command. Please try again."
 	}
 
 	// 1. Publish ke MQTT
-	if err := mqtt.PublishPumpControl(config.MQTTClient, deviceID, string(data)); err != nil {
+	if err := mqtt.PublishPumpControl(config.MQTTClient, deviceID, string(data)); err != "" {
 		return err
 	}
 
 	// 2. Update status pompa di database
-	if err := repositories.UpdatePumpStatus(deviceID, isOn); err != nil {
-		return fmt.Errorf("failed to update device status: %w", err)
+	if err := repositories.UpdatePumpStatus(deviceID, isOn); err != "" {
+		return err
 	}
 
-	return nil
+	return ""
 }
 
-func GetLocation(deviceID string) (string, error) {
+func GetLocation(deviceID string) (string, string) {
 	return repositories.GetLocation(deviceID)
 }
 
-func GetWeatherStatus(deviceID string) (string, error) {
+func GetWeatherStatus(deviceID string) (string, string) {
 	long, lat, err := repositories.GetCoords(deviceID)
-	if err != nil {
+	if err != "" {
 		return "", err
 	}
 
 	weatherStatus, err := weather.GetWeatherByCoords(long, lat)
-	if err != nil {
+	if err != "" {
 		return "", err
 	}
 
-	return weatherStatus, nil
+	return weatherStatus, ""
 }
 
-func AddPlantInfo(deviceID, plantName string, progressPlan int, lat, long float64, location string) error {
+func AddPlantInfo(deviceID, plantName string, progressPlan int, lat, long float64, location string) string {
 	return repositories.AddPlant(deviceID, plantName, progressPlan, lat, long, location)
 }
 
-func GetPlantInfo(deviceID string) (string, int, int, error) {
+func GetPlantInfo(deviceID string) (string, int, int, string) {
 	plantName, progressNow, progressPlan, err := repositories.GetPlantInfo(deviceID)
-	if err != nil {
+	if err != "" {
 		return "", 0, 0, err
 	}
 
-	return plantName, progressNow, progressPlan, nil
+	return plantName, progressNow, progressPlan, ""
 }
 
-func UpdatePlant(deviceID string, plantName, location string, progressPlan int, latitude, longitude float64) error {
+func UpdatePlant(deviceID string, plantName, location string, progressPlan int, latitude, longitude float64) string {
 	return repositories.UpdatePlant(deviceID, plantName, location, progressPlan, latitude, longitude)
 }
 
-func PairDevice(userID uint, code string) (uint, error) {
+func PairDevice(userID uint, code string) (string, string) {
 	device, err := repositories.FindDeviceByCode(code)
-	if err != nil {
-		return 0, fmt.Errorf("device not found")
+	if err != "" {
+		return "", err
 	}
 
 	err = repositories.AddDeviceToUser(userID, device.ID)
-	if err != nil {
-		return 0, err
+	if err != "" {
+		return "", err
 	}
 
-	return device.ID, nil
+	return device.ID, ""
 }
 
-func UnpairDevice(userID uint, deviceID uint) error {
+func UnpairDevice(userID uint, deviceID string) string {
 	return repositories.UnpairDevice(userID, deviceID)
 }
 
-func ControlSoil(deviceID string, soilMin, soilMax int) error {
+func ControlSoil(deviceID string, soilMin, soilMax int) string {
 	return repositories.UpdateSoilSettings(deviceID, soilMin, soilMax)
 }

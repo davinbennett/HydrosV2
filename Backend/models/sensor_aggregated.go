@@ -6,7 +6,7 @@ import (
 
 type SensorAggregate struct {
 	ID              uint `gorm:"primaryKey"`
-	DeviceID        uint
+	DeviceID        string
 	AvgTemperature  float32 `gorm:"default:0.0"`
 	AvgHumidity     float32 `gorm:"default:0.0"`
 	AvgSoilMoisture float32 `gorm:"default:0.0"`

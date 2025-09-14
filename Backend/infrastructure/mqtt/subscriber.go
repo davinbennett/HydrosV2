@@ -12,22 +12,31 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-func SubscribeTopics(client mqtt.Client, deviceID string) {
+func SubscribeTopics(client mqtt.Client, deviceID string) string {
 	topics := map[string]mqtt.MessageHandler{
-		fmt.Sprintf("from-esp/%s/sensor", deviceID): handleSensorData,
-		fmt.Sprintf("from-esp/%s/pump-status", deviceID): handlePumpStatus,
+		fmt.Sprintf("from-esp/%s/sensor", deviceID): func(c mqtt.Client, m mqtt.Message) {
+			if err := handleSensorData(c, m); err != "" {
+				// kirim error ke log sederhana, tapi tetap return string error
+				fmt.Printf("[MQTT] Sensor handler error: %s\n", err)
+			}
+		},
+		fmt.Sprintf("from-esp/%s/pump-status", deviceID): func(c mqtt.Client, m mqtt.Message) {
+			if err := handlePumpStatus(c, m); err != "" {
+				fmt.Printf("[MQTT] Pump handler error: %s\n", err)
+			}
+		},
 	}
 
 	for topic, handler := range topics {
 		if token := client.Subscribe(topic, 1, handler); token.Wait() && token.Error() != nil {
-			log.Printf("[MQTT] Subscribe error: %v", token.Error())
-		} else {
-			log.Printf("[MQTT] Subscribed to topic: %s", topic)
+			return "Failed to subscribe to MQTT topic. Please try again later."
 		}
 	}
+
+	return ""
 }
 
-func handleSensorData(client mqtt.Client, msg mqtt.Message) {
+func handleSensorData(client mqtt.Client, msg mqtt.Message) string{
 	topic := msg.Topic()
 	payload := msg.Payload()
 
@@ -37,14 +46,12 @@ func handleSensorData(client mqtt.Client, msg mqtt.Message) {
 	var sensorData dto.SensorData
 
 	if err := json.Unmarshal(payload, &sensorData); err != nil {
-		log.Printf("Failed to parse sensor data: %v", err)
-		return
+		return "Failed to save sensor data. Please try again later."
 	}
 
 	key := fmt.Sprintf("sensor/%s", deviceID)
-	err := repositories.SaveSensorData(key, sensorData)
-	if err != nil {
-		log.Printf("Failed to save sensor data to Redis: %v", err)
+	if err := repositories.SaveSensorData(key, sensorData); err != "" {
+		return "Failed to save sensor data. Please try again later."
 	}
 
 	// ! SEND TO WS
@@ -55,13 +62,13 @@ func handleSensorData(client mqtt.Client, msg mqtt.Message) {
 	}
 	jsonMsg, err := json.Marshal(wsPayload)
 	if err != nil {
-		log.Printf("Failed to marshal sensor WS payload: %v", err)
-		return
+		return "Failed to process sensor data for broadcast."
 	}
 	config.Broadcast <- jsonMsg
+	return ""
 }
 
-func handlePumpStatus(client mqtt.Client, msg mqtt.Message) {
+func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 	payload := string(msg.Payload())
 	topic := msg.Topic()
 	deviceID := extractDeviceIDFromTopic(topic)
@@ -78,10 +85,10 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) {
 	}
 	jsonMsg, err := json.Marshal(wsPayload)
 	if err != nil {
-		log.Printf("Failed to marshal status WS payload: %v", err)
-		return
+		return "Failed to process pump status for broadcast."
 	}
 	config.Broadcast <- jsonMsg
+	return ""
 }
 
 func extractDeviceIDFromTopic(topic string) string {
@@ -89,5 +96,5 @@ func extractDeviceIDFromTopic(topic string) string {
 	if len(parts) >= 2 {
 		return parts[1]
 	}
-	return "unknown deviceId"
+	return "Unknown."
 }

@@ -2,13 +2,12 @@ package services
 
 import (
 	"main/repositories"
-	"strconv"
 	"time"
 )
 
-func GetDeviceAlarms(deviceID string) (map[string]interface{}, error) {
+func GetDeviceAlarms(deviceID string) (map[string]interface{}, string) {
 	alarms, err := repositories.FindAlarmsByDeviceID(deviceID)
-	if err != nil {
+	if err != "" {
 		return nil, err
 	}
 
@@ -16,7 +15,7 @@ func GetDeviceAlarms(deviceID string) (map[string]interface{}, error) {
 	list := make([]map[string]interface{}, 0, len(alarms))
 
 	for _, alarm := range alarms {
-		list = append(list, map[string]interface{}{
+		list = append(list, map[string]any{
 			"id":            alarm.ID,
 			"is_executed":   alarm.IsExecute,
 			"schedule_time": alarm.ScheduleTime.Format(time.RFC3339),
@@ -35,23 +34,13 @@ func GetDeviceAlarms(deviceID string) (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"next_alarm": next,
 		"list_alarm": list,
-	}, nil
+	}, ""
 }
 
-func AddAlarm(deviceIDStr string, scheduleTime time.Time) error {
-	deviceID, err := strconv.Atoi(deviceIDStr)
-	if err != nil {
-		return err
-	}
-
-	return repositories.CreateAlarm(uint(deviceID), scheduleTime)
+func AddAlarm(deviceID string, scheduleTime time.Time) string {
+	return repositories.CreateAlarm(deviceID, scheduleTime)
 }
 
-
-func DeleteAlarm(deviceIDStr string, scheduleTime time.Time) error {
-	deviceID, err := strconv.Atoi(deviceIDStr)
-	if err != nil {
-		return err
-	}
-	return repositories.DeleteAlarmBySchedule(uint(deviceID), scheduleTime)
+func DeleteAlarm(deviceID string, scheduleTime time.Time) string {
+	return repositories.DeleteAlarmBySchedule(deviceID, scheduleTime)
 }

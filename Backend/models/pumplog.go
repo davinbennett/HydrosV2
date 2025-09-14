@@ -6,7 +6,7 @@ import (
 
 type PumpLog struct {
 	ID          uint `gorm:"primaryKey"`
-	DeviceID    uint
+	DeviceID    string
 	SoilBefore  float32 `gorm:"default:0.0"`
 	SoilAfter   float32 `gorm:"default:0.0"`
 	TriggeredBy *string // ! USER, ALARM, SOIL

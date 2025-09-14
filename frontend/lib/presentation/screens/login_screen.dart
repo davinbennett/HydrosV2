@@ -30,8 +30,6 @@ class LoginScreen extends ConsumerWidget {
     final loginState = ref.watch(loginControllerProvider);
 
     ref.listen<LoginState>(loginControllerProvider, (previous, next) {
-      logger.i('Login State: $next');
-
       if (next is LoginFailure) {
         ScaffoldMessenger.of(
           context,

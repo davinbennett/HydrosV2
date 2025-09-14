@@ -3,18 +3,12 @@ package controllers
 import (
 	"main/services"
 	"main/utils"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetAggregatedSensorData(c *gin.Context) {
-	deviceIDParam := c.Param("device-id")
-	deviceID, err := strconv.Atoi(deviceIDParam)
-	if err != nil {
-		utils.BadRequestResponse(c, "Invalid device ID")
-		return
-	}
+	deviceID := c.Param("device-id")
 
 	today := c.DefaultQuery("today", "false") == "true"
 	lastday := c.DefaultQuery("lastday", "false") == "true"
@@ -22,9 +16,9 @@ func GetAggregatedSensorData(c *gin.Context) {
 	startDate := c.Query("start-date")
 	endDate := c.Query("end-date")
 
-	data, err := services.GetSensorAggregate(uint(deviceID), today, lastday, month, startDate, endDate)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	data, err := services.GetSensorAggregate(deviceID, today, lastday, month, startDate, endDate)
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 

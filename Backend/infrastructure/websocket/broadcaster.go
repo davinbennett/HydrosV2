@@ -3,19 +3,21 @@ package websocket
 import (
 	"log"
 	"main/config"
+
+	"github.com/gorilla/websocket"
 )
 
-func StartBroadcaster() {
-	for {
-		msg := <-config.Broadcast
+func StartBroadcaster() string{
+	for msg := range config.Broadcast {
 
 		for conn := range config.Clients {
-			err := conn.WriteMessage(1, msg)
-			if err != nil {
+			if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 				log.Printf("WebSocket send error: %v", err)
 				conn.Close()
 				delete(config.Clients, conn)
 			}
 		}
 	}
+
+	return ""
 }

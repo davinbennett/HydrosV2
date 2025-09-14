@@ -5,7 +5,7 @@ import (
 	"main/dto"
 )
 
-func GetAIReport(req dto.AIReportRequest) (map[string]interface{}, error) {
+func GetAIReport(req dto.AIReportRequest) (map[string]interface{}, string) {
 	prompt := map[string]interface{}{
 		"plant_name":    req.PlantName,
 		"progress_plan": req.ProgressPlan,

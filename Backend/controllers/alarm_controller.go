@@ -12,8 +12,8 @@ func GetAlarmByDevice(c *gin.Context) {
 	deviceID := c.Param("device-id")
 
 	data, err := services.GetDeviceAlarms(deviceID)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong while fetching alarms.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -28,7 +28,7 @@ func AddAlarm(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequestResponse(c, "schedule_time is required.")
+		utils.BadRequestResponse(c, "Schedule time is required.")
 		return
 	}
 
@@ -38,12 +38,12 @@ func AddAlarm(c *gin.Context) {
 		return
 	}
 
-	if err := services.AddAlarm(deviceID, scheduleTime); err != nil {
-		utils.InternalServerErrorResponse(c, "Failed to create alarm.")
+	if err := services.AddAlarm(deviceID, scheduleTime); err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
-	utils.SuccessResponse(c, nil)
+	utils.SuccessResponse(c, "Alarm added successfully.")
 }
 
 func DeleteAlarm(c *gin.Context) {
@@ -64,10 +64,10 @@ func DeleteAlarm(c *gin.Context) {
 		return
 	}
 
-	if err := services.DeleteAlarm(deviceID, scheduleTime); err != nil {
-		utils.InternalServerErrorResponse(c, "Failed to delete alarm.")
+	if err := services.DeleteAlarm(deviceID, scheduleTime); err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
-	utils.SuccessResponse(c, nil)
+	utils.SuccessResponse(c, "Alarm successfully deleted.")
 }

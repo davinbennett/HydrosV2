@@ -6,26 +6,26 @@ import (
 	"time"
 )
 
-func GetPumpUsageToday(deviceID string) (int64, error) {
+func GetPumpUsageToday(deviceID string) (int64, string) {
 	return repositories.GetTodayPumpUsage(deviceID)
 }
 
-func GetLastWatered(deviceID string) (*time.Time, error) {
+func GetLastWatered(deviceID string) (*time.Time, string) {
 	pumpLog, err := repositories.GetLastWateredTime(deviceID)
-	if err != nil {
+	if err != "" {
 		return nil, err
 	}
 
-	return &pumpLog.UpdatedAt, nil
+	return &pumpLog.UpdatedAt, ""
 }
 
-func GetPumpStartTimes(deviceID string) ([]map[string]interface{}, error) {
+func GetPumpStartTimes(deviceID string) ([]map[string]interface{}, string) {
 	return repositories.GetPumpStartTimes(deviceID)
 }
 
-func GetPumpLog(deviceID string, from, to *time.Time, limit int) (any, error) {
+func GetPumpLog(deviceID string, from, to *time.Time, limit int) (any, string) {
 	logs, err := repositories.FindPumpLog(deviceID, from, to, limit)
-	if err != nil {
+	if err != "" {
 		return nil, err
 	}
 
@@ -34,17 +34,22 @@ func GetPumpLog(deviceID string, from, to *time.Time, limit int) (any, error) {
 			"total_pump":       0,
 			"average_duration": 0,
 			"detail":           []any{},
-		}, nil
+		}, ""
 	}
 
 	totalDuration := 0
 	details := make([]any, 0, len(logs))
 
 	for _, log := range logs {
+		// skip kalau start / end time null
+		if log.StartTime == nil || log.EndTime == nil {
+			continue
+		}
+
 		duration := int(log.EndTime.Sub(*log.StartTime).Seconds())
 		totalDuration += duration
 
-		details = append(details, map[string]interface{}{
+		details = append(details, map[string]any{
 			"triggered_by":    log.TriggeredBy,
 			"start_time":      log.StartTime.Format(time.RFC3339),
 			"end_time":        log.EndTime.Format(time.RFC3339),
@@ -56,16 +61,16 @@ func GetPumpLog(deviceID string, from, to *time.Time, limit int) (any, error) {
 
 	average := totalDuration / len(logs)
 
-	return map[string]interface{}{
+	return map[string]any{
 		"total_pump":       len(logs),
 		"average_duration": average,
 		"detail":           details,
-	}, nil
+	}, ""
 }
 
-func GetPumpLogDetailList(deviceID string, from, to *time.Time) ([]map[string]interface{}, error) {
+func GetPumpLogDetailList(deviceID string, from, to *time.Time) ([]map[string]interface{}, string) {
 	logs, err := repositories.FindPumpLog(deviceID, from, to, 0) // 0 = no limit
-	if err != nil {
+	if err != "" {
 		return nil, err
 	}
 
@@ -83,16 +88,16 @@ func GetPumpLogDetailList(deviceID string, from, to *time.Time) ([]map[string]in
 		})
 	}
 
-	return result, nil
+	return result, ""
 }
 
-func DeletePumpLog(id string) error {
+func DeletePumpLog(id string) string {
 	return repositories.DeletePumpLogByID(id)
 }
 
-func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]interface{}, error) {
+func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]interface{}, string) {
 	logs, err := repositories.FindPumpLog(deviceID, from, to, 1000)
-	if err != nil {
+	if err != "" {
 		return nil, err
 	}
 
@@ -101,7 +106,7 @@ func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]inte
 			"last_pumped": nil,
 			"soil_min":    nil,
 			"soil_max":    nil,
-		}, nil
+		}, ""
 	}
 
 	soilMin := logs[0].SoilBefore
@@ -124,5 +129,5 @@ func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]inte
 		"last_pumped": lastPumped.Format(time.RFC3339),
 		"soil_min":    soilMin,
 		"soil_max":    soilMax,
-	}, nil
+	}, ""
 }

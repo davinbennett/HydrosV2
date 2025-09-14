@@ -4,7 +4,6 @@ import (
 	"main/services"
 	"main/utils"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,12 +15,12 @@ func HandlePumpControl(c *gin.Context) {
 		IsOn bool `json:"ison"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequestResponse(c, "Invalid input")
+		utils.BadRequestResponse(c, "Invalid input.")
 		return
 	}
 
-	if err := services.ControlPump(deviceID, req.IsOn); err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err := services.ControlPump(deviceID, req.IsOn); err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -32,8 +31,8 @@ func GetDeviceLocation(c *gin.Context) {
 	deviceID := c.Param("id")
 
 	loc, err := services.GetLocation(deviceID)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -46,8 +45,8 @@ func GetWeatherStatus(c *gin.Context) {
 	deviceID := c.Param("id")
 
 	status, err := services.GetWeatherStatus(deviceID)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -72,20 +71,20 @@ func AddPlant(c *gin.Context) {
 		return
 	}
 
-	if err := services.AddPlantInfo(deviceID, req.PlantName, req.ProgressPlan, req.Latitude, req.Longitude, req.Location); err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err := services.AddPlantInfo(deviceID, req.PlantName, req.ProgressPlan, req.Latitude, req.Longitude, req.Location); err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
-	utils.SuccessResponse(c, "Add plant success")
+	utils.SuccessResponse(c, "Plant successfully added.")
 }
 
 func GetPlantInfo(c *gin.Context) {
 	deviceID := c.Param("id")
 
 	plantName, progressNow, progressPlan, err := services.GetPlantInfo(deviceID)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -108,13 +107,13 @@ func UpdatePlantInfo(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequestResponse(c, "Invalid input")
+		utils.BadRequestResponse(c, "Invalid input.")
 		return
 	}
 
 	err := services.UpdatePlant(deviceID, req.PlantName, req.Location, req.ProgressPlan, req.Latitude, req.Longitude)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -133,24 +132,24 @@ func PairDevice(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.BadRequestResponse(c, "Invalid request")
+		utils.BadRequestResponse(c, "Invalid request.")
 		return
 	}
 
 	userID, exists := c.Get("user_id")
 	if !exists {
-		utils.UnauthorizedResponse(c, "Unauthorized")
+		utils.UnauthorizedResponse(c, "Unauthorized.")
 		return
 	}
 
 	deviceId, err := services.PairDevice(userID.(uint), req.Code)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
-	if deviceId == 0 {
-		utils.NotFoundResponse(c, "Device code not found")
+	if deviceId == "" {
+		utils.NotFoundResponse(c, "Device code not found.")
 		return
 	}
 
@@ -160,27 +159,23 @@ func PairDevice(c *gin.Context) {
 }
 
 func UnpairDevice(c *gin.Context) {
-	deviceIDStr := c.Param("id")
-	deviceID, err := strconv.ParseUint(deviceIDStr, 10, 64)
-	if err != nil {
-		utils.BadRequestResponse(c, "Invalid device ID")
-		return
-	}
+    deviceID := c.Param("id")
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		utils.UnauthorizedResponse(c, "Unauthorized")
-		return
-	}
+    userID, exists := c.Get("user_id")
+    if !exists {
+        utils.UnauthorizedResponse(c, "Unauthorized.")
+        return
+    }
 
-	err = services.UnpairDevice(userID.(uint), uint(deviceID))
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
-		return
-	}
+    err := services.UnpairDevice(userID.(uint), deviceID)
+    if err != "" {
+        utils.InternalServerErrorResponse(c, err)
+        return
+    }
 
-	utils.SuccessResponse(c, "Success Unpair")
+    utils.SuccessResponse(c, "Success Unpair.")
 }
+
 
 
 func HandleSoilControl(c *gin.Context) {
@@ -196,10 +191,10 @@ func HandleSoilControl(c *gin.Context) {
 		return
 	}
 
-	if err := services.ControlSoil(deviceID, req.SoilMin, req.SoilMax); err != nil {
-		utils.InternalServerErrorResponse(c, "Failed to update soil settings")
+	if err := services.ControlSoil(deviceID, req.SoilMin, req.SoilMax); err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
-	utils.SuccessResponse(c, "Soil control updated")
+	utils.SuccessResponse(c, "Soil control updated.")
 }

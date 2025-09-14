@@ -14,10 +14,10 @@ type WeatherAPIResponse struct {
 	} `json:"weather"`
 }
 
-func GetWeatherByCoords(lat, long float64) (string, error) {
+func GetWeatherByCoords(lat, long float64) (string, string) {
 	apiKey := os.Getenv("OWM_API_KEY")
 	if apiKey == "" {
-		return "", fmt.Errorf("API key not found")
+		return "", "Something went wrong. Please try again later."
 	}
 
 	url := fmt.Sprintf(
@@ -27,22 +27,22 @@ func GetWeatherByCoords(lat, long float64) (string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", nil
+		return "", "Failed to reach the weather service"
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", nil
+		return "", "Something went wrong. Please try again later."
 	}
 
 	var result WeatherAPIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", nil
+		return "", "Something went wrong. Please try again later."
 	}
 
 	if len(result.Weather) == 0 {
-		return "", nil
+		return "", "Weather data is empty"
 	}
 
-	return result.Weather[0].Description, nil
+	return result.Weather[0].Description, ""
 }

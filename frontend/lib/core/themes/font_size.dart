@@ -4,4 +4,5 @@ class AppFontSize {
   static double get l => 18; // fix
   static double get xl => 26; // fix
   static double get xxl => 32;
+  static double get xxxl => 64;
 }

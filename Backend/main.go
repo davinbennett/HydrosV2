@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"main/config"
 	"main/infrastructure/cron"
@@ -60,14 +59,9 @@ func main() {
 	// ! MQTT
 	config.InitMQTTClient()
 
-	deviceIDsUint, err := repositories.GetAllDeviceIDs()
-	if err != nil {
-		log.Fatalf("🔴 Failed to get device IDs: %v", err)
-	}
-
-	var deviceIDs []string
-	for _, id := range deviceIDsUint {
-		deviceIDs = append(deviceIDs, fmt.Sprintf("DEVICE ID: %d", id))
+	deviceIDs, errs := repositories.GetAllDeviceIDs()
+	if errs != "" {
+		log.Fatalf("🔴 Failed to get device IDs: %v", errs)
 	}
 
 	var wg sync.WaitGroup

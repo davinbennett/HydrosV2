@@ -6,28 +6,41 @@ import (
 	"main/config"
 )
 
-func SaveSensorData(key string, data any) error {
+func SaveSensorData(key string, data any) string {
 	client := config.RedisClient
 	ctx := context.Background()
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return err
+		return "Gagal menyimpan data sensor"
 	}
 
-	return client.RPush(ctx, key, jsonData).Err()
+	if err := client.RPush(ctx, key, jsonData).Err(); err != nil {
+		return "Gagal menyimpan data sensor"
+	}
+
+	return ""
 }
 
-func GetSensorDataList(key string) ([]string, error) {
+func GetSensorDataList(key string) ([]string, string) {
 	ctx := context.Background()
 	client := config.RedisClient
 
-	return client.LRange(ctx, key, 0, -1).Result()
+	result, err := client.LRange(ctx, key, 0, -1).Result()
+	if err != nil {
+		return nil, "Gagal mengambil data sensor"
+	}
+
+	return result, ""
 }
 
-func DeleteSensorData(key string) error {
+func DeleteSensorData(key string) string {
 	client := config.RedisClient
 	ctx := context.Background()
 
-	return client.Del(ctx, key).Err()
+	if err := client.Del(ctx, key).Err(); err != nil {
+		return "Gagal menghapus data sensor"
+	}
+
+	return ""
 }

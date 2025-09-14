@@ -12,8 +12,8 @@ func GetPumpUsage(c *gin.Context) {
 	deviceID := c.Param("device-id")
 
 	count, err := services.GetPumpUsageToday(deviceID)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -26,8 +26,8 @@ func GetLastWatered(c *gin.Context) {
 	deviceID := c.Param("device-id")
 
 	lastWatered, err := services.GetLastWatered(deviceID)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -40,8 +40,8 @@ func GetPumpHistoryPreview(c *gin.Context) {
 	deviceID := c.Param("device-id")
 
 	logs, err := services.GetPumpStartTimes(deviceID)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -70,9 +70,9 @@ func GetPumpLog(c *gin.Context) {
 		return
 	}
 
-	result, err := services.GetPumpLog(deviceID, from, to, limit)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Failed to retrieve pump log")
+	result, errs := services.GetPumpLog(deviceID, from, to, limit)
+	if errs != "" {
+		utils.InternalServerErrorResponse(c, errs)
 		return
 	}
 
@@ -93,9 +93,9 @@ func GetPumpLogDetails(c *gin.Context) {
 		return
 	}
 
-	data, err := services.GetPumpLogDetailList(deviceID, from, to)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	data, errs := services.GetPumpLogDetailList(deviceID, from, to)
+	if errs != "" {
+		utils.InternalServerErrorResponse(c, errs)
 		return
 	}
 
@@ -106,8 +106,8 @@ func DeletePumpLogByID(c *gin.Context) {
 	id := c.Param("id")
 
 	err := services.DeletePumpLog(id)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
@@ -129,9 +129,9 @@ func GetPumpQuickActivity(c *gin.Context) {
 		return
 	}
 
-	data, err := services.GetPumpQuickActivity(deviceID, from, to)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	data, errs := services.GetPumpQuickActivity(deviceID, from, to)
+	if errs != "" {
+		utils.InternalServerErrorResponse(c, errs)
 		return
 	}
 

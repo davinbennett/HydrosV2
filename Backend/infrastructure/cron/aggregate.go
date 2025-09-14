@@ -3,44 +3,61 @@ package cron
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"main/dto"
 	"main/models"
 	"main/repositories"
+	"sync"
 	"time"
-	"main/dto"
 )
 
 // AggregateSensorData Tiap 10 menit
-func AggregateSensorData() {
+func AggregateSensorData() string {
 	deviceIDs, err := repositories.GetAllDeviceIDs()
-	if err != nil {
-		log.Println("Failed to get device IDs:", err)
-		return
+	if err != "" {
+		return "Gagal mengambil daftar device"
 	}
+
+	var wg sync.WaitGroup
+	errChan := make(chan string, len(deviceIDs))
 
 	for _, deviceID := range deviceIDs {
-		go aggregateDeviceData(deviceID)
+		wg.Add(1)
+		go func(did string) {
+			defer wg.Done()
+			if msg := aggregateDeviceData(did); msg != "" {
+				errChan <- msg
+			}
+		}(deviceID)
 	}
+
+	wg.Wait()
+	close(errChan)
+
+	// ambil error pertama yang muncul
+	for e := range errChan {
+		return e
+	}
+
+	return ""
 }
 
-func aggregateDeviceData(deviceID uint) {
+
+func aggregateDeviceData(deviceID string) string {
 	// Ambil data dari Redis
-	redisKey := fmt.Sprintf("sensor/%d", deviceID)
+	redisKey := fmt.Sprintf("sensor/%s", deviceID)
 	dataList, err := repositories.GetSensorDataList(redisKey)
-	if err != nil {
-		log.Printf("Error fetching Redis data for device %d: %v", deviceID, err)
-		return
+	if err != "" {
+		return "Gagal mengambil data sensor dari Redis"
 	}
 	if len(dataList) == 0 {
-		log.Printf("No data to aggregate for device %d", deviceID)
-		return
+		return "" // tidak ada data, bukan error
 	}
 
 	var totalTemp, totalHumid, totalSoil float32
 	for _, raw := range dataList {
 		var sensor dto.SensorData
-		if err := json.Unmarshal([]byte(raw), &sensor); err != nil {
-			continue
+		if e := json.Unmarshal([]byte(raw), &sensor); e != nil {
+			continue // skip data yang corrupt
 		}
 		totalTemp += sensor.Temperature
 		totalHumid += sensor.Humidity
@@ -60,13 +77,14 @@ func aggregateDeviceData(deviceID uint) {
 		IntervalEnd:     &now,
 	}
 
-	if err := repositories.SaveAggregatedSensor(agg); err != nil {
-		log.Printf("Failed to save aggregated sensor data: %v", err)
-		return
+	if msg := repositories.SaveAggregatedSensor(agg); msg != "" {
+		return "Gagal menyimpan hasil agregasi sensor"
 	}
 
 	// Bersihkan Redis setelah agregasi
-	if err := repositories.DeleteSensorData(redisKey); err != nil {
-		log.Printf("Failed to clear Redis key %s: %v", redisKey, err)
+	if msg := repositories.DeleteSensorData(redisKey); msg != "" {
+		return "Gagal menghapus data sensor dari Redis"
 	}
+
+	return ""
 }

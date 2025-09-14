@@ -11,6 +11,7 @@ dependencies:
   dio: ^5.8.0+1
   firebase_auth: ^6.0.0
   firebase_core: ^4.0.0
+  fl_chart: ^1.0.0
   fluentui_system_icons: ^1.1.273
   flutter:
     sdk: flutter
@@ -49,6 +50,9 @@ flutter:
     - lib/assets/images/success_signup.png
     - lib/assets/images/reset_your_password.png
     - lib/assets/images/create_new_password.png
+    - lib/assets/images/logo_hydros.png
+    - lib/assets/images/home_top.png
+    - lib/assets/images/no_plant_add.png
     - lib/assets/icons/google.svg
     - .env
   fonts:

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"errors"
+	"fmt"
 	"time"
 )
 
@@ -25,14 +25,14 @@ func ResolveDateRange(today, lastday, month bool, start, end string) (*time.Time
 		var err error
 		from, err = time.Parse(layout, start)
 		if err != nil {
-			return nil, nil, errors.New("invalid start-date format, expected ddmmyy")
+			return nil, nil, fmt.Errorf("invalid start-date format, expected ddmmyy")
 		}
 		to, err = time.Parse(layout, end)
 		if err != nil {
-			return nil, nil, errors.New("invalid end-date format, expected ddmmyy")
+			return nil, nil, fmt.Errorf("invalid end-date format, expected ddmmyy")
 		}
 	default:
-		return nil, nil, errors.New("no valid date range parameters provided")
+		return nil, nil, fmt.Errorf("no valid date range parameters provided")
 	}
 
 	return &from, &to, nil

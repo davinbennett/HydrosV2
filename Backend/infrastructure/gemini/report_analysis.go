@@ -9,7 +9,7 @@ import (
 	"google.golang.org/genai"
 )
 
-func GenerateReport(prompt map[string]interface{}) (map[string]interface{}, error){
+func GenerateReport(prompt map[string]interface{}) (map[string]any, string){
 	ctx := context.Background()
 
 	model := "gemini-2.5-flash-preview-05-20"
@@ -113,13 +113,13 @@ func GenerateReport(prompt map[string]interface{}) (map[string]interface{}, erro
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, "Failed to connect to AI service. Please try again later."
 	}
 
 	var parsed map[string]interface{}
 	if err := json.Unmarshal([]byte(result.Text()), &parsed); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+		return nil, "Failed to process AI response. Please try again later."
 	}
 
-	return parsed, nil
+	return parsed, ""
 }

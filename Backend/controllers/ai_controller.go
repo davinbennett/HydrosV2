@@ -17,8 +17,8 @@ func GenerateAIReport(c *gin.Context) {
 	}
 
 	result, err := services.GetAIReport(req)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
