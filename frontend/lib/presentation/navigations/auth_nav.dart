@@ -7,10 +7,5 @@ final authRoutes = <GoRoute>[
     path: '/help',
     builder: (context, state) => const HelpAboutPairDevicePage(),
   ),
-  GoRoute(
-    name: 'help',
-    path: '/help',
-    builder: (context, state) => const HelpAboutPairDevicePage(),
-  ),
   // Add more auth/login/register routes here
 ];
