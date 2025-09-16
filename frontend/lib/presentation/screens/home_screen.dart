@@ -66,38 +66,77 @@ class HomeScreen extends ConsumerWidget {
                         ),    
                       ],
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Hi, Hydromers!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: AppFontSize.xl,
-                            fontWeight: AppFontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
+                    SizedBox(height: 150),
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 5,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Hi, Hydromers!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: AppFontSize.xl,
-                            fontWeight: AppFontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Kiri: info lokasi + suhu
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on, size: 18, color: Colors.black),
+                                    SizedBox(width: 4),
+                                    Text('-', style: TextStyle(fontSize: 14)),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 4,
+                                      color: Colors.black,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '°C',
+                                      style: TextStyle(
+                                        fontSize: 24, // atau AppFontSize.xl
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                Text('-', style: TextStyle(fontSize: 14)),
+                              ],
+                            ),
+
+                            // Kanan: gambar petani
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(50), // bulat seperti desain kamu
+                              child: Image.asset(
+                                'assets/farmer.png', // ganti dengan path gambar kamu
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Hi, Hydromers!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: AppFontSize.xl,
-                            fontWeight: AppFontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

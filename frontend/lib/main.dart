@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -17,18 +17,17 @@ void main() {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  
 
   runApp(const ProviderScope(child: MainApp()));
 }
 
 class MainApp extends ConsumerWidget {
   const MainApp({super.key});
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(mainRouterProvider);
-    
+
     final width = MediaQuery.of(context).size.width;
     ScreenSizeUtil.init(width);
 

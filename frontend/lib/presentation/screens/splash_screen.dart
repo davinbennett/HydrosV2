@@ -31,9 +31,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       final authStatus = ref.read(authProvider);
 
       if (authStatus == AuthStatus.authenticated) {
-        context.go('/app/home');
+        context.go('/app/help');
       } else {
-        context.go('/home');
+        context.go('/help');
       }
     });
   }

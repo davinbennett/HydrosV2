@@ -1,17 +1,16 @@
-import 'package:frontend/presentation/screens/home_screen.dart';
-import 'package:frontend/presentation/screens/login_screen.dart';
+import 'package:frontend/presentation/screens/help_screen.dart';
 import 'package:go_router/go_router.dart';
 
 final authRoutes = <GoRoute>[
   GoRoute(
-    name: 'login',
-    path: '/login',
-    builder: (context, state) => const LoginScreen(),
+    name: 'help',
+    path: '/help',
+    builder: (context, state) => const HelpAboutPairDevicePage(),
   ),
   GoRoute(
-    name: 'home',
-    path: '/home',
-    builder: (context, state) => const HomeScreen(),
+    name: 'help',
+    path: '/help',
+    builder: (context, state) => const HelpAboutPairDevicePage(),
   ),
   // Add more auth/login/register routes here
 ];
