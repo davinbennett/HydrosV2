@@ -5,7 +5,7 @@ import (
 )
 
 type Device struct {
-	ID               string  `gorm:"primaryKey"`
+	ID               string  `gorm:"type:text;primaryKey"`
 	MinSoilSetting   float32 `gorm:"default:0.0"`
 	MaxSoilSetting   float32 `gorm:"default:50.0"`
 	IsOn             bool    `gorm:"default:false"`
