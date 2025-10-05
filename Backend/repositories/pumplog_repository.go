@@ -61,3 +61,43 @@ func DeletePumpLogByID(id string) string {
 	}
 	return ""
 }
+
+func CreatePumpLog(deviceID string, soilBefore float64, triggeredBy int, startTime time.Time) string {
+	log := models.PumpLog{
+		DeviceID:    deviceID,
+		SoilBefore:  soilBefore,
+		TriggeredBy: triggeredBy,
+		StartTime:   &startTime,
+	}
+
+	if err := config.PostgresDB.Create(&log).Error; err != nil {
+		return "Failed to create pump log"
+	}
+
+	return ""
+}
+
+
+func UpdatePumpLog(deviceID string, soilAfter float64, endTime time.Time) string {
+	var log models.PumpLog
+
+	// Cari pump log terakhir yang masih ON (EndTime = NULL)
+	if err := config.PostgresDB.
+		Where("device_id = ? AND end_time IS NULL", deviceID).
+		Order("start_time DESC").
+		First(&log).Error; err != nil {
+		return "No active pump log found for update: " + err.Error()
+	}
+
+	// Update data
+	log.SoilAfter = soilAfter
+	log.EndTime = &endTime
+	log.UpdatedAt = time.Now()
+
+	if err := config.PostgresDB.Save(&log).Error; err != nil {
+		return "Failed to update pump log"
+	}
+
+	return ""
+}
+

@@ -1,18 +1,21 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-var MQTTClient mqtt.Client 
+var MQTTClients = make(map[string]mqtt.Client) // simpan banyak client
 
-func InitMQTTClient() mqtt.Client {
+func InitMQTTClient(deviceID string) mqtt.Client {
+	clientID := fmt.Sprintf("%s-%s", os.Getenv("MQTT_CLIENT_ID"), deviceID)
+	
 	opts := mqtt.NewClientOptions().
 		AddBroker(os.Getenv("MQTT_BROKER")).
-		SetClientID("hydros-backend-multi").
+		SetClientID(clientID).
 		SetCleanSession(true)
 
 	client := mqtt.NewClient(opts)
@@ -21,6 +24,6 @@ func InitMQTTClient() mqtt.Client {
 	}
 	log.Println("✅ [MQTT] Connected to MQTT broker")
 
-	MQTTClient = client
+	MQTTClients[deviceID] = client
 	return client
 }

@@ -41,7 +41,7 @@ func ConnectPostgres() error {
 }
 
 
-func AutoMigrate(models ...interface{}) error {
+func AutoMigrate(models ...any) error {
 	if PostgresDB == nil {
 		return fmt.Errorf("database connection not initialized")
 	}

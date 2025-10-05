@@ -11,8 +11,12 @@ func AlarmRoute(rg *gin.RouterGroup) {
 	{
 		r.GET("/:device-id", controllers.GetAlarmByDevice)
 
-		r.POST("/:device-id", controllers.AddAlarm)
-		r.DELETE("/:device-id", controllers.DeleteAlarm)
+		r.POST("", controllers.AddAlarm)
+
+		r.PATCH("/:id", controllers.UpdateAlarm)
+		r.PATCH("/:id/control-enabled", controllers.UpdateEnabled)
+		
+		r.DELETE("/:id", controllers.DeleteAlarm)
 	}
 }
 

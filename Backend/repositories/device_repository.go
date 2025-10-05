@@ -23,7 +23,7 @@ func GetAllDeviceIDs() ([]string, string) {
 
 func UpdatePumpStatus(deviceID string, isOn bool) string {
 	var device models.Device
-	if err := config.PostgresDB.Where("device_id = ?", deviceID).First(&device).Error; err != nil {
+	if err := config.PostgresDB.Where("id = ?", deviceID).First(&device).Error; err != nil {
 		return "Device not found."
 	}
 
@@ -138,14 +138,22 @@ func UnpairDevice(userID uint, deviceID string) string {
 	return ""
 }
 
-func UpdateSoilSettings(deviceID string, soilMin, soilMax int) string {
+func UpdateSoilSettings(deviceID string, soilMin, soilMax float64) string {
 	if err := config.PostgresDB.Model(&models.Device{}).
 		Where("id = ?", deviceID).
-		Updates(map[string]interface{}{
+		Updates(map[string]any{
 			"min_soil_setting": soilMin,
 			"max_soil_setting": soilMax,
 		}).Error; err != nil {
 		return "Failed to update soil settings."
 	}
 	return ""
+}
+
+func GetPumpStatusById(id string) (bool, string) {
+	var device models.Device
+	if err := config.PostgresDB.Where("id = ?", id).First(&device).Error; err != nil {
+		return false, "Device not found with the provided id."
+	}
+	return device.IsOn, ""
 }

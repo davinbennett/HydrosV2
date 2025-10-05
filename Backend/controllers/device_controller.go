@@ -3,7 +3,6 @@ package controllers
 import (
 	"main/services"
 	"main/utils"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,12 +18,12 @@ func HandlePumpControl(c *gin.Context) {
 		return
 	}
 
-	if err := services.ControlPump(deviceID, req.IsOn); err != "" {
+	if err := services.ControlPumpSwitch(deviceID, req.IsOn); err != "" {
 		utils.InternalServerErrorResponse(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, "Pump control sent")
+	utils.SuccessResponse(c, "Pump control sent.")
 }
 
 func GetDeviceLocation(c *gin.Context) {
@@ -182,8 +181,8 @@ func HandleSoilControl(c *gin.Context) {
 	deviceID := c.Param("id")
 
 	var req struct {
-		SoilMin int `json:"soil_min"`
-		SoilMax int `json:"soil_max"`
+		SoilMin float64 `json:"soil_min"`
+		SoilMax float64 `json:"soil_max"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {

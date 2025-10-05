@@ -5,12 +5,16 @@ import (
 )
 
 type Alarm struct {
-	ID           uint   `gorm:"primaryKey"`
-	DeviceID     string `gorm:"type:text;not null"`
-	IsExecute    bool   `gorm:"default:false"`
-	ScheduleTime *time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           uint       `gorm:"primaryKey"`
+	DeviceID     string     `gorm:"type:text;not null"`
+	ScheduleTime *time.Time `gorm:"not null"`
+	IsEnabled    bool       `gorm:"default:true"`
+	DurationOn   int        `gorm:"default:5"` // in minutes
+
+	RepeatType int `gorm:"type:int;default:1"` // 1=once,2=daily,3=weekly,4=custom
+
+	CreatedAt time.Time `gorm:"default:now()"`
+	UpdatedAt time.Time `gorm:"default:now()"`
 
 	Device Device `gorm:"foreignKey:DeviceID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

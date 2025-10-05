@@ -10,6 +10,6 @@ type User struct {
 	Email          string
 	Password       *string
 	ProfilePicture *string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	CreatedAt      time.Time `gorm:"default:now()"`
+	UpdatedAt      time.Time `gorm:"default:now()"`
 }

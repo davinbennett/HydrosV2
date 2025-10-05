@@ -9,7 +9,7 @@ import (
 func DeviceRoute(rg *gin.RouterGroup) {
 	r := rg.Group("/device") 
 	{
-		r.POST("/:id/pump-status", controllers.HandlePumpControl)
+		r.POST("/:id/control-switch", controllers.HandlePumpControl)
 		r.POST("/:id/plant", controllers.AddPlant)
 		r.POST("/:id/control-soil", controllers.HandleSoilControl)
 

@@ -12,11 +12,11 @@ func SaveSensorData(key string, data any) string {
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return "Gagal menyimpan data sensor"
+		return "Failed to save sensor data."
 	}
 
 	if err := client.RPush(ctx, key, jsonData).Err(); err != nil {
-		return "Gagal menyimpan data sensor"
+		return "Something went wrong while saving sensor data."
 	}
 
 	return ""
@@ -28,7 +28,7 @@ func GetSensorDataList(key string) ([]string, string) {
 
 	result, err := client.LRange(ctx, key, 0, -1).Result()
 	if err != nil {
-		return nil, "Gagal mengambil data sensor"
+		return nil, "Failed to save sensor data."
 	}
 
 	return result, ""

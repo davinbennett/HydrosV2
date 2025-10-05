@@ -57,8 +57,6 @@ func main() {
 	log.Println("✅ Cron started")
 
 	// ! MQTT
-	config.InitMQTTClient()
-
 	deviceIDs, errs := repositories.GetAllDeviceIDs()
 	if errs != "" {
 		log.Fatalf("🔴 Failed to get device IDs: %v", errs)
@@ -69,7 +67,11 @@ func main() {
 		wg.Add(1)
 		go func(did string) {
 			defer wg.Done()
-			mqtt.SubscribeTopics(config.MQTTClient, did)
+			client := config.InitMQTTClient(did)
+			err := mqtt.SubscribeTopics(client, did)
+			if err != "" {
+				log.Fatalf("🔴 Failed to subscribe %s: %s", did, err)
+			} 
 		}(deviceID)
 	}
 	wg.Wait()

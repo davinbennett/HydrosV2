@@ -8,14 +8,14 @@ import (
 	"main/repositories"
 )
 
-func ControlPump(deviceID string, isOn bool) string {
-	command := "off"
+func ControlPumpSwitch(deviceID string, isOn bool) string {
+	command := 2
 	if isOn {
-		command = "on"
+		command = 1
 	}
 
 	// Kirim format JSON ke MQTT
-	payload := map[string]string{
+	payload := map[string]int{
 		"status": command,
 	}
 	data, err := json.Marshal(payload)
@@ -24,17 +24,38 @@ func ControlPump(deviceID string, isOn bool) string {
 	}
 
 	// 1. Publish ke MQTT
-	if err := mqtt.PublishPumpControl(config.MQTTClient, deviceID, string(data)); err != "" {
-		return err
-	}
-
-	// 2. Update status pompa di database
-	if err := repositories.UpdatePumpStatus(deviceID, isOn); err != "" {
+	if err := mqtt.PublishPumpControl(config.MQTTClients, deviceID, string(data)); err != "" {
 		return err
 	}
 
 	return ""
 }
+
+func ControlSoil(deviceID string, soilMin, soilMax float64) string {
+
+	// Kirim format JSON ke MQTT
+	payload := map[string]float64{
+		"soil_min": soilMin,
+		"soil_max": soilMax,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "Failed to process command. Please try again."
+	}
+
+	// 1. Publish ke MQTT
+	if err := mqtt.PublishSoilControl(config.MQTTClients, deviceID, string(data)); err != "" {
+		return err
+	}
+
+	// 2. Update status soil di database
+	if err := repositories.UpdateSoilSettings(deviceID, soilMin, soilMax); err != "" {
+		return err
+	}
+
+	return ""
+}
+
 
 func GetLocation(deviceID string) (string, string) {
 	return repositories.GetLocation(deviceID)
@@ -87,8 +108,4 @@ func PairDevice(userID uint, code string) (string, string) {
 
 func UnpairDevice(userID uint, deviceID string) string {
 	return repositories.UnpairDevice(userID, deviceID)
-}
-
-func ControlSoil(deviceID string, soilMin, soilMax int) string {
-	return repositories.UpdateSoilSettings(deviceID, soilMin, soilMax)
 }
