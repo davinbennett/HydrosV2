@@ -12,8 +12,8 @@ class AlarmModel extends AlarmEntity {
 
   factory AlarmModel.fromJson(Map<String, dynamic> json) {
     return AlarmModel(
-      id: json['id'] as int,
-      deviceId: json['device_id'] as int,
+      id: json['id'],
+      deviceId: json['device_id'],
       isExecuted: json['is_executed'] as bool,
       scheduleTime: DateTime.parse(json['schedule_time']),
       createdAt:
@@ -37,4 +37,13 @@ class AlarmModel extends AlarmEntity {
       'updated_at': updatedAt?.toIso8601String(),
     };
   }
+
+  AlarmEntity toEntity() => AlarmEntity(
+    id: id,
+    deviceId: deviceId,
+    isExecuted: isExecuted,
+    scheduleTime: scheduleTime,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

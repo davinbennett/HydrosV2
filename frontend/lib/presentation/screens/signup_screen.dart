@@ -10,91 +10,100 @@ import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
-import 'package:frontend/presentation/states/login_state.dart';
-import 'package:frontend/presentation/states/signup_state.dart';
+import 'package:frontend/presentation/providers/injection.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:frontend/presentation/widgets/global/text_form_field.dart';
 import 'package:go_router/go_router.dart';
 
-class SignUpScreen extends ConsumerWidget {
-  SignUpScreen({super.key});
+class SignUpScreen extends ConsumerStatefulWidget {
+  const SignUpScreen({super.key});
 
-  // Form
+  @override
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final usernameController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  bool isLoading = false;
+
+
+  Future<void> handleSignUp() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
+    setState(() => isLoading = true);
+
+    final controller = ref.read(signupControllerProvider);
+
+    final result = await controller.signupEmail(email: emailController.text.trim());
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (result is AuthSignupSuccess) {
+      ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
+
+      context.go(
+        '/verify-otp',
+        extra: {
+          'email': emailController.text.trim(),
+          'password': passwordController.text.trim(),
+          'username': usernameController.text.trim(),
+          'previousScreen': '/signup',
+        },
+      );
+    } else if (result is AuthFailure) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  }
+
+  Future<void> handleGoogleLogin() async {
+    setState(() => isLoading = true);
+
+    final controller = ref.read(loginControllerProvider);
+
+    final result = await controller.loginWithGoogle();
+    ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (result is AuthAuthenticated) {
+      context.go('/home');
+    } else if (result is AuthFailure) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final mq = MediaQueryHelper.of(context);
-    final signupState = ref.watch(signUpControllerProvider);
-
-    
-    // Listen Signup
-    ref.listen<SignupState>(signUpControllerProvider, (previous, next) {
-      if (next is SignupFailure) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage)));
-      } else if (next is SignupSuccess) {
-        context.go(
-          '/verify-otp',
-          extra: {
-            'email': emailController.text.trim(),
-            'password': passwordController.text.trim(),
-            'username': usernameController.text.trim(),
-          },
-        );
-      }
-    });
-
-    // Listen Login
-    ref.listen<LoginState>(loginControllerProvider, (previous, next) {
-      if (next is LoginFailure) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage)));
-      } else if (next is LoginSuccess) {
-        context.go('/home');
-      }
-    });
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         systemNavigationBarColor:
             mq.isPortrait ? AppColors.secondary : AppColors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
-        statusBarColor: Colors.transparent
+        statusBarColor: Colors.transparent,
       ),
     );
-
-    // CONTROLLER
-    void handleSignUp(BuildContext context) async {
-      final isValid = _formKey.currentState?.validate() ?? false;
-
-      if (!isValid) return;
-
-      final controller = ref.read(signUpControllerProvider.notifier);
-
-      await controller.signupEmail(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-        username: usernameController.text.trim(),
-      );
-    }
-
-    void handleGoogleLogin(BuildContext context) async {
-      final controller = ref.read(loginControllerProvider.notifier);
-      await controller.loginWithGoogle();
-    }
 
     return Scaffold(
       body: Stack(
         children: [
           AbsorbPointer(
-            absorbing: signupState is SignupLoading,
+            absorbing: isLoading,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -127,9 +136,9 @@ class SignUpScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                
+
                           SizedBox(height: AppSpacingSize.xs),
-                
+
                           FittedBox(
                             child: Text(
                               'Create your account to start smarter gardening',
@@ -140,19 +149,19 @@ class SignUpScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                
+
                           SizedBox(height: AppSpacingSize.xl),
-                
+
                           // Gambar
                           SizedBox(
                             width: 200,
                             child: Image.asset('lib/assets/images/login.png'),
                           ),
-                
+
                           SizedBox(height: AppSpacingSize.xl),
                         ],
                       ),
-                
+
                       // ! MID
                       Column(
                         spacing: AppSpacingSize.s,
@@ -164,7 +173,7 @@ class SignUpScreen extends ConsumerWidget {
                             controller: usernameController,
                             validator: AppValidator.usernameRequired,
                           ),
-                
+
                           // Email
                           TextFormFieldWidget(
                             label: 'Email',
@@ -172,7 +181,7 @@ class SignUpScreen extends ConsumerWidget {
                             controller: emailController,
                             validator: AppValidator.email,
                           ),
-                
+
                           // Password
                           TextFormFieldWidget(
                             label: 'Password',
@@ -181,23 +190,24 @@ class SignUpScreen extends ConsumerWidget {
                             controller: passwordController,
                             validator: AppValidator.password,
                           ),
-                
+
                           // Confirm Password
                           TextFormFieldWidget(
                             label: 'Confirm Password',
                             icon: Icons.lock_outline,
                             isPassword: true,
                             controller: confirmPasswordController,
-                            validator: (value) => AppValidator.confirmPassword(
-                              passwordController.text,
-                              value,
-                            ),
+                            validator:
+                                (value) => AppValidator.confirmPassword(
+                                  passwordController.text,
+                                  value,
+                                ),
                           ),
                         ],
                       ),
-                
+
                       SizedBox(height: AppSpacingSize.xxl),
-                
+
                       // ! BOTTOM
                       Column(
                         spacing: AppSpacingSize.l,
@@ -205,9 +215,9 @@ class SignUpScreen extends ConsumerWidget {
                           // Sign In button
                           ButtonWidget(
                             text: "Sign Up",
-                            onPressed: () => handleSignUp(context),
+                            onPressed: () => handleSignUp(),
                           ),
-                
+
                           // Divider with text
                           Row(
                             children: [
@@ -229,11 +239,11 @@ class SignUpScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                
+
                           // Google Button
                           ButtonWidget(
                             text: "Google",
-                            onPressed: () => handleGoogleLogin(context),
+                            onPressed: () => handleGoogleLogin(),
                             svgAsset: SvgPicture.asset(
                               'lib/assets/icons/google.svg',
                               width: AppElementSize.m,
@@ -243,7 +253,7 @@ class SignUpScreen extends ConsumerWidget {
                             foregroundColor: AppColors.gray,
                             borderColor: AppColors.grayLight,
                           ),
-                
+
                           // Sign up text
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +294,7 @@ class SignUpScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (signupState is SignupLoading)
+          if (isLoading)
             Container(
               color: const Color.fromARGB(
                 55,
@@ -298,4 +308,5 @@ class SignUpScreen extends ConsumerWidget {
       ),
     );
   }
+  
 }

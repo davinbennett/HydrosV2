@@ -26,6 +26,11 @@ func ContinueWithGoogle(idToken string) (string, uint, string) {
 	picture := payload.Claims["picture"].(string)
 	name := payload.Claims["name"].(string)
 
+	exists, err2 := repositories.IsEmailExists(email)
+	if err2 != "" || exists {
+		return "", 0, err2
+	}
+
 	user, errStr := repositories.GetUserByGoogleID(googleID)
 	if errStr != "" && errStr == "User not found." {
 		// User not found, register new one
@@ -77,20 +82,21 @@ func LoginWithEmail(email, password string) (string, uint, string) {
 func SendOTP(email string, isFrom string) string {
 	if isFrom == "signup" {
 		exists, err := repositories.IsEmailExists(email)
-		if err != "" {
-			return err
-		}
-		if exists {
+		if err != "" || exists {
 			return err
 		}
 	}
 
 
 	if isFrom == "reset_password" {
-		_, err := repositories.IsEmailExists(email)
-		if err != "This email is already registered." {
-			return err
+		exists, msg := repositories.IsEmailExists(email)
+		if !exists {
+			return "Email not found."
 		}
+		
+		if msg != "This email is already registered." {
+			return msg
+		} 
 	}
 
 	otp, _ := utils.GenerateOTP()

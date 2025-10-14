@@ -1,14 +1,15 @@
-import 'package:frontend/data/models/auth.dart';
+
+import 'package:frontend/domain/entities/auth.dart';
 
 // ! HANYA KUMPULAN ABSTRACT
 // ! PAKAI MODEL JIKA RESPONSENYA BEDA JAUH DENGAN ENTITIES
 
 abstract class AuthRepository {
-  Future<LoginModel> loginWithEmail(String email, String password);
-  Future<LoginModel> loginWithGoogle();
+  Future<AuthEntity> loginWithEmail(String email, String password);
+  Future<AuthEntity> loginWithGoogle();
   Future<String> requestOtp(String email, String isFrom);
   Future<String> verifyOtp(String email, String otp);
-  Future<LoginModel> registerWithEmail(
+  Future<AuthEntity> registerWithEmail(
     String username,
     String email,
     String password,

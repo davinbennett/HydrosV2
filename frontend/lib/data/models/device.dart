@@ -64,4 +64,22 @@ class DeviceModel extends DeviceEntity {
       'updated_at': updatedAt?.toIso8601String(),
     };
   }
+
+  DeviceEntity toEntity() => DeviceEntity(
+    id: id,
+    minSoilSetting: minSoilSetting,
+    maxSoilSetting: maxSoilSetting,
+    isOn: isOn,
+    latitude: latitude,
+    longitude: longitude,
+    location: location,
+    progressPlan: progressPlan,
+    progressNow: progressNow,
+    code: code,
+    plantName: plantName,
+    isActiveSoil: isActiveSoil,
+    isActivePump: isActivePump,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

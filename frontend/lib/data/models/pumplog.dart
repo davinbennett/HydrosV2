@@ -50,4 +50,16 @@ class PumpLogModel extends PumpLogEntity {
       'updated_at': updatedAt?.toIso8601String(),
     };
   }
+
+  PumpLogEntity toEntity() => PumpLogEntity(
+    id: id,
+    deviceId: deviceId,
+    soilBefore: soilBefore,
+    soilAfter: soilAfter,
+    triggeredBy: triggeredBy,
+    startTime: startTime,
+    endTime: endTime,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

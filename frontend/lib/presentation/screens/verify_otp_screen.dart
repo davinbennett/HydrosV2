@@ -11,8 +11,8 @@ import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/hide_email_address.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
-import 'package:frontend/presentation/states/signup_state.dart';
-import 'package:frontend/presentation/states/verify_otp.dart';
+import 'package:frontend/presentation/providers/injection.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:frontend/presentation/widgets/global/app_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:otp_timer_button/otp_timer_button.dart';
@@ -45,6 +45,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
   int _countdown = 30;
   bool canResend = false;
 
+  bool isLoading = false;
+
   late final String email = widget.email;
   late final String? password = widget.password;
   late final String? username = widget.username;
@@ -53,6 +55,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint("Previous Screen: ${widget.previousScreen}\n==================\n");
+    debugPrint("Email: ${widget.email}\n");
     startTimer();
   }
 
@@ -84,51 +88,56 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
         canResend = false;
       });
 
-      final signupState = ref.read(signUpControllerProvider);
-      ref
-          .read(signUpControllerProvider.notifier)
-          .signupEmail(
-            email: signupState.email ?? '',
-            password: signupState.password,
-            username: signupState.username,
-          );
+      final controllerSignUp = ref.read(signupControllerProvider);
+      await controllerSignUp.signupEmail(email: widget.email);
       startTimer();
+    }
+  }
+
+  Future<void> handleOtp(String pin) async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
+    setState(() => isLoading = true);
+
+    final controllerVerifyOtp = ref.read(
+      verifyOtpControllerProvider,
+    );
+
+    final result = await controllerVerifyOtp.verifyOtp(
+      email: email,
+      otp: pin.trim(),
+    );
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (username != null &&
+        password != null &&
+        previousScreen == '/signup') {
+      final registerController = ref.read(registerWithEmailControllerProvider);
+      registerController.registerWithEmail(
+        username: username!,
+        email: email,
+        password: password!,
+      );
+      ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
+      context.go('/success-signup');
+    } else if (result is AuthFailure) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    } else {
+      // Reset password flow
+      ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
+      context.go('/create-new-password', extra: {'email': email});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final signupState = ref.watch(signUpControllerProvider);
     final mq = MediaQueryHelper.of(context);
-
-    // cek dari reset-password atau signup
-    final previousScreen = ref.read(resetPasswordControllerProvider).previousScreen ?? '/signup';
-
-    // Listen verify OTP
-    ref.listen<VerifyOtpState>(verifyOtpControllerProvider, (previous, next) {
-      if (next is VerifyOtpSuccess) {
-        // register
-        if (ref.read(signUpControllerProvider).username != null &&
-            ref.read(signUpControllerProvider).password != null) {
-          
-          ref
-              .read(registerWithEmailControllerProvider.notifier)
-              .registerWithEmail(
-                username: ref.read(signUpControllerProvider).username!,
-                email: ref.read(signUpControllerProvider).email ?? '',
-                password: ref.read(signUpControllerProvider).password!,
-              );
-          context.go('/success-signup');
-        } else {
-          // reset password
-          context.go('/create-new-password', extra: {'email': widget.email});
-        }
-      } else if (next is VerifyOtpFailure) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage)));
-      }
-    });
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
@@ -195,7 +204,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                           ),
                           TextSpan(
                             text:
-                                '${hideEmail(ref.read(signUpControllerProvider).email ?? ref.read(resetPasswordControllerProvider).email!)}. ',
+                                '${hideEmail(widget.email)}. ',
                             style: TextStyle(
                               fontSize: AppFontSize.m,
                               color: AppColors.orange,
@@ -225,20 +234,11 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                         }
                         return null;
                       },
-                      onCompleted: (pin) {
-                        final controllerVerifyOtp = ref.read(
-                          verifyOtpControllerProvider.notifier,
-                        );
-
-                        controllerVerifyOtp.verifyOtp(
-                          email: email,
-                          otp: pin.trim(),
-                        );
-                      },
+                      onCompleted: (pin) => handleOtp(pin),
                       defaultPinTheme: PinTheme(
                         width: 50,
                         height: 56,
-                        textStyle: const TextStyle(
+                        textStyle: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                         ),
@@ -314,7 +314,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
               ),
             ),
           ),
-          if (signupState is SignupLoading)
+          if (isLoading)
             Container(
               color: const Color.fromARGB(
                 55,

@@ -8,21 +8,21 @@ abstract class AppException implements Exception {
 }
 
 class TimeoutException extends AppException {
-  TimeoutException() : super('Permintaan ke server melebihi waktu tunggu.');
+  TimeoutException() : super('Request Timeout.');
 }
 
 class NetworkException extends AppException {
-  NetworkException() : super('Tidak dapat terhubung ke jaringan.');
+  NetworkException([super.message = 'Unable to connect to network.']);
 }
 
 class NotFoundException extends AppException {
-  NotFoundException() : super('Data tidak ditemukan.');
+  NotFoundException() : super('Data not found.');
 }
 
 class ServerException extends AppException {
-  ServerException([super.message = 'Terjadi kesalahan pada server.']);
+  ServerException([super.message = 'An error occurred on the server.']);
 }
 
 class UnknownException extends AppException {
-  UnknownException([super.msg = 'Terjadi kesalahan tidak diketahui.']);
+  UnknownException([super.msg = 'An unknown error occurred.']);
 }

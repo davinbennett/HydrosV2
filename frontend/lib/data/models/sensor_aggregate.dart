@@ -52,4 +52,16 @@ class SensorAggregateModel extends SensorAggregateEntity {
       'updated_at': updatedAt?.toIso8601String(),
     };
   }
+
+  SensorAggregateEntity toEntity() => SensorAggregateEntity(
+    id: id,
+    deviceId: deviceId,
+    avgTemperature: avgTemperature,
+    avgHumidity: avgHumidity,
+    avgSoilMoisture: avgSoilMoisture,
+    intervalStart: intervalStart,
+    intervalEnd: intervalEnd,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

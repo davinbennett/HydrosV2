@@ -1,5 +1,5 @@
 class DeviceEntity {
-  final int? id;
+  final String? id;
   final double? minSoilSetting;
   final double? maxSoilSetting;
   final bool? isOn;

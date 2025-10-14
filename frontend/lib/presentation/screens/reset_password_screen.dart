@@ -7,42 +7,60 @@ import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
-import 'package:frontend/presentation/states/reset_password_state.dart';
+import 'package:frontend/presentation/providers/injection.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:frontend/presentation/widgets/global/app_bar.dart';
 import 'package:frontend/presentation/widgets/global/text_form_field.dart';
 import 'package:go_router/go_router.dart';
 
-class ResetPasswordScreen extends ConsumerWidget {
-  ResetPasswordScreen({super.key});
+class ResetPasswordScreen extends ConsumerStatefulWidget {
+  const ResetPasswordScreen({super.key});
 
+  @override
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
+}
+
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
 
+  bool isLoading = false;
+
+  Future<void> handleSend() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+
+    if (!isValid) return;
+
+    final controller = ref.read(resetPasswordControllerProvider);
+
+    final result = await controller.resetPassword(email: emailController.text.trim());
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (result is AuthPasswordReset) {
+      ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
+      context.go(
+        '/verify-otp',
+        extra: {
+          'previous-screen': '/reset-password',
+          'email': emailController.text.trim(),
+        },
+      );
+    } else if (result is AuthFailure) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  }
+
   // Form
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final mq = MediaQueryHelper.of(context);
-    final resetPasswordState = ref.watch(resetPasswordControllerProvider);
-
-    ref.listen<ResetPasswordState>(resetPasswordControllerProvider, (
-      previous,
-      next,
-    ) {
-      if (next is ResetPasswordFailure) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage)));
-      } else if (next is ResetPasswordSuccess) {
-        context.go(
-          '/verify-otp',
-          extra: {
-            'previous-screen': '/reset-password',
-            'email': emailController.text.trim(),
-          },
-        );
-      }
-    });
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
@@ -53,24 +71,12 @@ class ResetPasswordScreen extends ConsumerWidget {
       ),
     );
 
-    void handleSend() async {
-      final isValid = _formKey.currentState?.validate() ?? false;
-
-      if (!isValid) return;
-
-      final controller = ref.read(resetPasswordControllerProvider.notifier);
-
-      await controller.resetPassword(
-        email: emailController.text.trim()
-      );
-    }
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           AbsorbPointer(
-            absorbing: resetPasswordState is ResetPasswordLoading,
+            absorbing: isLoading,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -94,7 +100,7 @@ class ResetPasswordScreen extends ConsumerWidget {
                       title: "Reset Your Password",
                       onBack: () => context.go('/login'),
                     ),
-              
+
                     // BODY DI TENGAH
                     Expanded(
                       child: SingleChildScrollView(
@@ -128,7 +134,7 @@ class ResetPasswordScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-              
+
                     // BUTTON PALING BAWAH
                     Padding(
                       padding: EdgeInsets.only(bottom: AppSpacingSize.l),
@@ -142,7 +148,7 @@ class ResetPasswordScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (resetPasswordState is ResetPasswordLoading)
+          if (isLoading)
             Container(
               color: const Color.fromARGB(
                 55,

@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
-import 'package:frontend/presentation/providers/global_auth_provider.dart';
-import 'package:frontend/presentation/states/global_auth_state.dart';
+import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:go_router/go_router.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -33,20 +33,26 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
       if (!mounted) return;
 
-      final state = ref.read(globalStateProvider);
+      final authState = ref.read(authProvider);
 
-      if (state is GlobalAuthenticated) {
-        context.go('/home');
-      } else if (state is GlobalUnauthenticated) {
-        context.go('/login');
-      }
+      authState.when(
+        data: (state) {
+          if (state is AuthAuthenticated) {
+            context.go('/home');
+          } else {
+            context.go('/login');
+          }
+        },
+        loading: () => null,
+        error: (_, _) => context.go('/login'),
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     // ! delete secure storage sementara
-    // Future.microtask(() => SecureStorage.clearAll());
+    // Future.microtask(() => SecureStorage .clearAll());
 
     return Scaffold(
       body: Container(

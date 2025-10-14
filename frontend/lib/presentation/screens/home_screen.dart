@@ -10,11 +10,8 @@ import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
-import 'package:frontend/presentation/providers/global_auth_provider.dart';
-import 'package:frontend/presentation/providers/global_device_provider.dart';
-import 'package:frontend/presentation/states/global_auth_state.dart';
-import 'package:frontend/presentation/states/global_device_state.dart';
-import 'package:frontend/presentation/states/home_state.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
+import 'package:frontend/presentation/states/device_state.dart';
 import 'package:frontend/presentation/widgets/global/app_bar.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:frontend/presentation/widgets/home/pie_chart.dart';
@@ -119,72 +116,72 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildUI(GlobalDeviceState state, BuildContext context) {
-    if (state is UnPaired) {
-      return Padding(
-        padding: EdgeInsets.all(AppSpacingSize.l),
-        child: Column(
-          spacing: AppSpacingSize.l,
-          children: [
-            Text(
-              'No Plant Added Yet',
-              style: TextStyle(
-                fontSize: AppFontSize.l,
-                fontWeight: AppFontWeight.medium,
-              ),
-            ),
-            Image.asset(
-              'lib/assets/images/no_plant_add.png',
-              width: 126,
-              height: 120,
-            ),
-            FittedBox(
-              child: Text(
-                'Make sure your device is paired to begin adding plants.',
-                style: TextStyle(fontSize: AppFontSize.m),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (state is PairedNoPlant) {
-      return Padding(
-        padding: EdgeInsets.all(AppSpacingSize.l),
-        child: Column(
-          spacing: AppSpacingSize.l,
-          children: [
-            Text(
-              'No Plant Added Yet',
-              style: TextStyle(
-                fontSize: AppFontSize.l,
-                fontWeight: AppFontWeight.medium,
-              ),
-            ),
-            Image.asset(
-              'lib/assets/images/no_plant_add.png',
-              width: 126,
-              height: 120,
-            ),
-            ButtonWidget(
-              text: "+ Add Plant",
-              onPressed: () {
-                showDialog(context: context, builder: (_) => addPlantDialog(context));
-              },
-            ),
-          ],
-        ),
-      );
-    } else if (state is PairedWithPlant) {
-      return Text("login, sudah pair, dan sudah ada plant");
-    } else {
-      return Text("Menunggu...");
-    }
-  }
+  // Widget _buildUI(GlobalDeviceState state, BuildContext context) {
+  //   if (state is UnPaired) {
+  //     return Padding(
+  //       padding: EdgeInsets.all(AppSpacingSize.l),
+  //       child: Column(
+  //         spacing: AppSpacingSize.l,
+  //         children: [
+  //           Text(
+  //             'No Plant Added Yet',
+  //             style: TextStyle(
+  //               fontSize: AppFontSize.l,
+  //               fontWeight: AppFontWeight.medium,
+  //             ),
+  //           ),
+  //           Image.asset(
+  //             'lib/assets/images/no_plant_add.png',
+  //             width: 126,
+  //             height: 120,
+  //           ),
+  //           FittedBox(
+  //             child: Text(
+  //               'Make sure your device is paired to begin adding plants.',
+  //               style: TextStyle(fontSize: AppFontSize.m),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   } else if (state is PairedNoPlant) {
+  //     return Padding(
+  //       padding: EdgeInsets.all(AppSpacingSize.l),
+  //       child: Column(
+  //         spacing: AppSpacingSize.l,
+  //         children: [
+  //           Text(
+  //             'No Plant Added Yet',
+  //             style: TextStyle(
+  //               fontSize: AppFontSize.l,
+  //               fontWeight: AppFontWeight.medium,
+  //             ),
+  //           ),
+  //           Image.asset(
+  //             'lib/assets/images/no_plant_add.png',
+  //             width: 126,
+  //             height: 120,
+  //           ),
+  //           ButtonWidget(
+  //             text: "+ Add Plant",
+  //             onPressed: () {
+  //               showDialog(context: context, builder: (_) => addPlantDialog(context));
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   } else if (state is PairedWithPlant) {
+  //     return Text("login, sudah pair, dan sudah ada plant");
+  //   } else {
+  //     return Text("Menunggu...");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mq = MediaQueryHelper.of(context);
-    final globalDeviceState = ref.watch(globalDeviceProvider);
+    // final globalDeviceState = ref.watch(globalDeviceProvider);
 
     // ref.read(globalDeviceProvider.notifier).setUnPaired();
     // ref.listen<GlobalDeviceState>(globalDeviceProvider, (prev, next) {
@@ -378,14 +375,14 @@ class HomeScreen extends ConsumerWidget {
 
             SizedBox(height: AppSpacingSize.xs),
 
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(AppRadius.rm),
-                border: Border.all(color: AppColors.borderOrange, width: 0.7),
-              ),
-              child: _buildUI(globalDeviceState, context),
-            ),
+            // Container(
+            //   decoration: BoxDecoration(
+            //     color: AppColors.white,
+            //     borderRadius: BorderRadius.circular(AppRadius.rm),
+            //     border: Border.all(color: AppColors.borderOrange, width: 0.7),
+            //   ),
+            //   child: _buildUI(globalDeviceState, context),
+            // ),
           ],
         ),
       ),

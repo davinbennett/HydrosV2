@@ -2,17 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/presentation/providers/global_auth_provider.dart';
+import 'package:frontend/presentation/providers/auth_provider.dart';
 import 'package:frontend/presentation/screens/splash_screen.dart';
-import 'package:frontend/presentation/states/global_auth_state.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:go_router/go_router.dart';
 import 'app_nav.dart';
 import 'auth_nav.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
+    _subscription = stream.asBroadcastStream().listen((_) {
+      notifyListeners();
+    });
   }
 
   late final StreamSubscription<dynamic> _subscription;
@@ -24,29 +25,51 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
+class AuthChangeNotifier extends ChangeNotifier {
+  AuthChangeNotifier(Ref ref) {
+    // listen perubahan authProvider
+    ref.listen<AsyncValue<AuthState>>(authProvider, (_, _) {
+      notifyListeners();
+    });
+  }
+}
+
+
+
 
 final mainRouterProvider = Provider<GoRouter>((ref) {
+  // final authNotifier = ref.watch(authProvider.notifier);
+  
+  final refreshNotifier = AuthChangeNotifier(ref);
+  
   return GoRouter(
     initialLocation: '/splash',
     debugLogDiagnostics: true,
-    refreshListenable: GoRouterRefreshStream(
-      ref.watch(globalStateProvider.notifier).stream,
-    ),
+    refreshListenable: refreshNotifier,
+
     redirect: (context, state) {
-      final globalState = ref.read(globalStateProvider);
 
+      final authState = ref.read(authProvider);
       final isSplash = state.matchedLocation == '/splash';
+      final isLogin = state.matchedLocation == '/login';
+      final isSignup = state.matchedLocation == '/signup';
 
-      if (globalState is GlobalLoading || globalState is GlobalInitial) {
+      if (authState.isLoading) {
         return isSplash ? null : '/splash';
       }
 
-      if (globalState is GlobalAuthenticated) {
-        return isSplash ? '/home' : null;
+      final data = authState.valueOrNull;
+
+      // Jika belum login
+      if (data is AuthUnauthenticated) {
+        if (isSplash || isLogin || isSignup) return null;
+        return '/login';
       }
 
-      if (globalState is GlobalUnauthenticated) {
-        return isSplash ? '/login' : null;
+      // Jika sudah login
+      if (data is AuthAuthenticated) {
+        if (isSplash || isLogin || isSignup) return '/home';
+        return null;
       }
 
       return null;

@@ -6,42 +6,59 @@ import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
-import 'package:frontend/presentation/providers/auth_provider.dart';
-import 'package:frontend/presentation/states/new_password_state.dart.dart';
+import 'package:frontend/presentation/providers/injection.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:frontend/presentation/widgets/global/app_bar.dart';
 import 'package:frontend/presentation/widgets/global/text_form_field.dart';
 import 'package:go_router/go_router.dart';
 
-class CreateNewPasswordScreen extends ConsumerWidget {
-  CreateNewPasswordScreen({super.key, required this.email});
+class CreateNewPasswordScreen extends ConsumerStatefulWidget {
+  const CreateNewPasswordScreen({super.key, required this.email});
 
   final String email;
 
+  @override
+  ConsumerState<CreateNewPasswordScreen> createState() =>
+      _CreateNewPasswordScreenState();
+}
+
+class _CreateNewPasswordScreenState
+    extends ConsumerState<CreateNewPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  // Form
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mq = MediaQueryHelper.of(context);
-    final newPasswordState = ref.watch(newPasswordControllerProvider);
+  bool isLoading = false;
 
-    ref.listen<NewPasswordState>(newPasswordControllerProvider, (
-      previous,
-      next,
-    ) {
-      if (next is NewPasswordFailure) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage)));
-      } else if (next is NewPasswordSuccess) {
-        context.go(
-          '/success-update-password',
-        );
-      }
-    });
+  Future<void> handleCreate() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
+    setState(() => isLoading = true);
+
+    final controller = ref.read(newPasswordControllerProvider);
+
+    final errorMessage = await controller.newPassword(
+      email: widget.email,
+      password: passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (errorMessage != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+    } else {
+      context.go('/success-update-password');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQueryHelper.of(context);
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
@@ -52,26 +69,12 @@ class CreateNewPasswordScreen extends ConsumerWidget {
       ),
     );
 
-    void handleCreate(String email) async {
-      final isValid = _formKey.currentState?.validate() ?? false;
-
-      if (!isValid) return;
-
-      final controller = ref.read(newPasswordControllerProvider.notifier);
-
-      await controller.newPassword(
-        email: email,
-        password: passwordController.text.trim(),
-      );
-    }
-
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           AbsorbPointer(
-            absorbing: newPasswordState is NewPasswordLoading,
+            absorbing: isLoading,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -166,7 +169,7 @@ class CreateNewPasswordScreen extends ConsumerWidget {
                       padding: EdgeInsets.only(bottom: AppSpacingSize.l),
                       child: ButtonWidget(
                         text: "Create",
-                        onPressed: () => handleCreate(email),
+                        onPressed: handleCreate,
                       ),
                     ),
                   ],
@@ -174,7 +177,7 @@ class CreateNewPasswordScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (newPasswordState is NewPasswordLoading)
+          if (isLoading)
             Container(
               color: const Color.fromARGB(
                 55,

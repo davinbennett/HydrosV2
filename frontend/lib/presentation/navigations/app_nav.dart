@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/presentation/screens/home_screen.dart';
+import 'package:frontend/presentation/screens/pair_device_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -15,10 +16,8 @@ class BottomNavBar extends StatefulWidget {
 class _BottomNavBarState extends State<BottomNavBar> {
   int _currentIndex = 0;
 
-  /// cache halaman supaya tidak rebuild setiap kali pindah
   final Map<int, Widget> _pageCache = {};
 
-  /// daftar konfigurasi menu
   final List<_NavItem> _navItems = [
     _NavItem(
       icon: Icons.home_outlined,
@@ -36,7 +35,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       icon: Icons.tap_and_play_outlined,
       activeIcon: Icons.tap_and_play,
       label: "Pair Device",
-      page: Center(child: Text("Pair Device Page")),
+      page: PairDeviceScreen(),
     ),
     _NavItem(
       icon: Icons.settings_input_antenna_outlined,
@@ -80,6 +79,11 @@ class _BottomNavBarState extends State<BottomNavBar> {
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
         onTap: (index) {
+          if (index == 2) {
+            context.pushNamed('pair-device');
+            return;
+          }
+
           setState(() {
             _currentIndex = index;
           });
@@ -122,5 +126,15 @@ final appRoutes = <GoRoute>[
     name: 'home',
     path: '/home',
     builder: (context, state) => const BottomNavBar(),
+  ),
+  GoRoute(
+    name: 'profile',
+    path: '/profile',
+    builder: (context, state) => const BottomNavBar(),
+  ),
+  GoRoute(
+    name: 'pair-device',
+    path: '/pair-device',
+    builder: (context, state) => const PairDeviceScreen(),
   ),
 ];

@@ -6,7 +6,7 @@ class AuthApi {
   final Dio _dio = DioClient.instance;
 
   // Login email & password
-  Future<LoginModel> loginWithEmail({
+  Future<AuthModel> loginWithEmail({
     required String email,
     required String password,
   }) async {
@@ -17,7 +17,7 @@ class AuthApi {
       );
 
       final data = response.data['data'];
-      return LoginModel.fromJson(data);
+      return AuthModel.fromJson(data);
     } on DioException catch (e) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
@@ -44,7 +44,7 @@ class AuthApi {
   }
 
   // Login Google
-  Future<LoginModel> loginWithGoogle({required String idToken}) async {
+  Future<AuthModel> loginWithGoogle({required String idToken}) async {
     try {
       final response = await _dio.post(
         '/auth/continue-google',
@@ -52,7 +52,7 @@ class AuthApi {
       );
 
       final data = response.data['data'];
-      return LoginModel.fromJson(data);
+      return AuthModel.fromJson(data);
     } on DioException catch (e) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
@@ -149,7 +149,7 @@ class AuthApi {
   }
 
   // register with email final
-  Future<LoginModel> registerWithEmail({
+  Future<AuthModel> registerWithEmail({
     required String username,
     required String email,
     required String password,
@@ -161,7 +161,7 @@ class AuthApi {
       );
 
       final data = response.data['data'];
-      return LoginModel.fromJson(data);
+      return AuthModel.fromJson(data);
     } on DioException catch (e) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:

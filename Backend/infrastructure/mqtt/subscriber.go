@@ -8,6 +8,7 @@ import (
 
 	// "main/config"
 
+	"main/config"
 	"main/repositories"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -84,8 +85,10 @@ func handleDeviceStatus(client mqtt.Client, msg mqtt.Message) string {
 
 	log.Printf("WS > status device > jsonMsg:%s\n", jsonMsg)
 
-	// Kirim ke FE
-	// config.Broadcast <- jsonMsg
+	// Kirim ke frontend (non-blocking)
+	go func() {
+		config.Broadcast <- jsonMsg
+	}()
 
 	return ""
 }

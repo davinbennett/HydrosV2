@@ -1,6 +1,6 @@
 class AlarmEntity {
-  final int? id;
-  final int? deviceId;
+  final String? id;
+  final String? deviceId;
   final bool? isExecuted;
   final DateTime? scheduleTime;
   final DateTime? createdAt;

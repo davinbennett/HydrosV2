@@ -1,4 +1,5 @@
-import 'package:frontend/data/models/auth.dart';
+
+import 'package:frontend/domain/entities/auth.dart';
 import 'package:frontend/domain/repositories/auth.dart';
 import 'package:frontend/infrastructure/api/auth_api.dart';
 import 'package:frontend/infrastructure/google_signin/auth.dart';
@@ -13,19 +14,20 @@ class AuthImpl implements AuthRepository {
 
 
   @override
-  Future<LoginModel> loginWithEmail(String email, String password) {
-    return api.loginWithEmail(email: email, password: password);
+  Future<AuthEntity> loginWithEmail(String email, String password) async {
+    final model = await api.loginWithEmail(email: email, password: password);
+    return model.toEntity();
   }
 
   @override
-  Future<LoginModel> loginWithGoogle() async {
-    // 1) firebase sign-in -> idToken
+  Future<AuthEntity> loginWithGoogle() async {
+    // Sign-in Google Firebase
     final idToken = await firebaseService.signInWithGoogle();
 
-    // 2) send idToken to backend
-    final login = await api.loginWithGoogle(idToken: idToken);
+    // Kirim idToken ke backend API
+    final model = await api.loginWithGoogle(idToken: idToken);
 
-    return login;
+    return model.toEntity();
   }
 
   @override
@@ -45,8 +47,18 @@ class AuthImpl implements AuthRepository {
   }
 
   @override
-  Future<LoginModel> registerWithEmail(String username, String email, String password) {
-    return api.registerWithEmail(username: username, email: email, password: password);
+  Future<AuthEntity> registerWithEmail(
+    String username,
+    String email,
+    String password,
+  ) async {
+    final model = await api.registerWithEmail(
+      username: username,
+      email: email,
+      password: password,
+    );
+
+    return model.toEntity();
   }
 
   @override

@@ -41,4 +41,14 @@ class UserModel extends UserEntity {
       'updated_at': updatedAt?.toIso8601String(),
     };
   }
+
+  UserEntity toEntity() => UserEntity(
+    id: id,
+    googleId: googleId,
+    username: username,
+    email: email,
+    profilePicture: profilePicture,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

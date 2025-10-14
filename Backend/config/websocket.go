@@ -1,15 +1,19 @@
 package config
 
 import (
-	"github.com/gorilla/websocket"
 	"net/http"
+	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
-var Clients = make(map[*websocket.Conn]bool)
-var Broadcast = make(chan []byte)
+var (
+	Upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
 
-var Upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true 
-	},
-}
+	Clients      = make(map[*websocket.Conn]bool)
+	ClientsMutex sync.Mutex
+
+	Broadcast = make(chan []byte)
+)

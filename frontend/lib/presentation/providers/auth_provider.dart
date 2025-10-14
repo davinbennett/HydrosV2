@@ -1,77 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/domain/usecase/auth/login.dart';
-import 'package:frontend/domain/usecase/auth/new_password.dart';
-import 'package:frontend/domain/usecase/auth/register_with_email.dart';
-import 'package:frontend/domain/usecase/auth/reset_password.dart';
-import 'package:frontend/domain/usecase/auth/signup.dart';
-import 'package:frontend/domain/usecase/auth/verify_otp.dart';
-import 'package:frontend/presentation/controllers/login_controller.dart';
-import 'package:frontend/presentation/controllers/new_password_controller.dart';
-import 'package:frontend/presentation/controllers/reset_password_controller.dart';
-import 'package:frontend/presentation/controllers/signup_controller.dart';
-import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
-import 'package:frontend/presentation/providers/injection.dart';
-import 'package:frontend/presentation/states/login_state.dart';
-import 'package:frontend/presentation/states/new_password_state.dart.dart';
-import 'package:frontend/presentation/states/reset_password_state.dart';
-import 'package:frontend/presentation/states/signup_state.dart';
-import 'package:frontend/presentation/states/verify_otp.dart';
+import 'package:frontend/domain/entities/auth.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
 
-final loginControllerProvider =
-    StateNotifierProvider<LoginController, LoginState>((ref) {
-      final authRepository = ref.read(authRepositoryProvider);
+final authProvider = StateNotifierProvider<AuthNotifier, AsyncValue<AuthState>>(
+  (ref) {
+    return AuthNotifier()..checkLogin();
+  },
+);
 
-      return LoginController(
-        loginEmailUsecase: LoginWithEmailUseCase(authRepository),
-        loginGoogleUsecase: LoginWithGoogleUseCase(authRepository),
-      );
-    });
+class AuthNotifier extends StateNotifier<AsyncValue<AuthState>> {
+  AuthNotifier() : super(const AsyncValue.loading());
 
-final signUpControllerProvider =
-    StateNotifierProvider<SignupController, SignupState>((ref) {
-      final authRepository = ref.read(authRepositoryProvider);
+  Future<void> checkLogin() async {
+    try {
+      state = const AsyncValue.loading();
+      await Future.delayed(const Duration(milliseconds: 300));
 
-      return SignupController(
-        signupEmailUsecase: SignupUseCase(authRepository),
-      );
-    });
+      final accessToken = await SecureStorage.getAccessToken();
+      final userId = await SecureStorage.getUserId();
 
-final verifyOtpControllerProvider =
-    StateNotifierProvider<VerifyOtpController, VerifyOtpState>((ref) {
-      final authRepository = ref.read(authRepositoryProvider);
+      if (accessToken != null && userId != null) {
+        final auth = AuthEntity(userId: userId, accessToken: accessToken);
+        state = AsyncValue.data(AuthAuthenticated(auth));
+      } else {
+        state = AsyncValue.data(AuthUnauthenticated());
+      }
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
 
-      return VerifyOtpController(
-        verifyOtpUsecase: VerifyOtpUseCase(authRepository),
-      );
-    });
+  Future<void> logout() async {
+    await SecureStorage.clearAll();
+    state = AsyncValue.data(AuthUnauthenticated());
+  }
 
-final registerWithEmailControllerProvider =
-    StateNotifierProvider<RegisterWithEmailController, RegisterWithEmailState>((ref) {
-      final authRepository = ref.read(authRepositoryProvider);
+  void setAuthenticated(AsyncValue<AuthState> auth) {
+    state = auth;
+  }
 
-      return RegisterWithEmailController(
-        registerWithEmailUsecase: RegisterWithEmailUseCase(authRepository),
-      );
-    });
-
-final resetPasswordControllerProvider =
-    StateNotifierProvider<ResetPasswordController, ResetPasswordState>((
-      ref,
-    ) {
-      final authRepository = ref.read(authRepositoryProvider);
-
-      return ResetPasswordController(
-        resetPasswordUsecase: ResetPasswordUseCase(authRepository),
-      );
-    });
-
-final newPasswordControllerProvider =
-    StateNotifierProvider<NewPasswordController, NewPasswordState>((
-      ref,
-    ) {
-      final authRepository = ref.read(authRepositoryProvider);
-
-      return NewPasswordController(
-        newPasswordUsecase: NewPasswordUseCase(authRepository),
-      );
-    });
+  void setUnauthenticated() {
+    state = AsyncValue.data(AuthUnauthenticated());
+  }
+}

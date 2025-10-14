@@ -1,25 +1,20 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/domain/usecase/auth/verify_otp.dart';
-import 'package:frontend/presentation/states/verify_otp.dart';
 
-class VerifyOtpController extends StateNotifier<VerifyOtpState> {
+import 'package:frontend/domain/usecase/auth/verify_otp.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
+
+class VerifyOtpController {
   final VerifyOtpUseCase verifyOtpUsecase;
 
-  VerifyOtpController({required this.verifyOtpUsecase}) : super(VerifyOtpInitial());
+  VerifyOtpController({required this.verifyOtpUsecase})
+    : super();
 
-  Future<String?> verifyOtp({required String email, required String otp}) async {
-    state = VerifyOtpLoading();
-
+  Future<AuthState> verifyOtp({required String email, required String otp}) async {
     try {
       await verifyOtpUsecase.execute(email, otp);
 
-      state = VerifyOtpSuccess();
-      return null;
+      return AuthOtpVerified();
     } catch (e) {
-      state = VerifyOtpFailure(
-        e.toString().isNotEmpty ? e.toString() : 'Unknown error occurred.',
-      );
+      return AuthFailure(e.toString());
     }
-    return null;
   }
 }

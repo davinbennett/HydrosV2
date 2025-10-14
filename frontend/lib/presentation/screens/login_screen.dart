@@ -7,71 +7,95 @@ import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
-import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
+import 'package:frontend/domain/entities/auth.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
-import 'package:frontend/presentation/states/login_state.dart';
+import 'package:frontend/presentation/providers/injection.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:frontend/presentation/widgets/global/text_form_field.dart';
 import 'package:go_router/go_router.dart';
 
-class LoginScreen extends ConsumerWidget {
-  LoginScreen({super.key});
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({super.key});
 
-  // Form
+  @override
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool isLoading = false;
+
+  Future<void> handleLogin() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
+    setState(() => isLoading = true);
+
+    final controller = ref.read(loginControllerProvider);
+    final result = await controller.loginEmail(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
+    
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (result is AuthAuthenticated) {
+      ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
+      
+      context.go('/home');
+    } else if (result is AuthFailure) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  }
+
+  Future<void> handleGoogleLogin() async {
+    setState(() => isLoading = true);
+
+    final controller = ref.read(loginControllerProvider);
+
+    final result = await controller.loginWithGoogle();
+    ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    if (result is AuthAuthenticated) {
+      context.go('/home');
+    } else if (result is AuthFailure) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final mq = MediaQueryHelper.of(context);
-    final loginState = ref.watch(loginControllerProvider);
-
-    ref.listen<LoginState>(loginControllerProvider, (previous, next) {
-      if (next is LoginFailure) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage)));
-      } else if (next is LoginSuccess) {
-        context.go('/home');
-      }
-    });
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         systemNavigationBarColor:
             mq.isPortrait ? AppColors.secondary : AppColors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
-        statusBarColor: Colors.transparent
+        statusBarColor: Colors.transparent,
       ),
     );
-
-    // CONTROLLER
-    void handleLogin(BuildContext context) async {
-      final isValid = _formKey.currentState?.validate() ?? false;
-
-      if (!isValid) return;
-
-      final controller = ref.read(loginControllerProvider.notifier);
-
-      await controller.loginEmail(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
-    }
-
-    void handleGoogleLogin(BuildContext context) async {
-      final controller = ref.read(loginControllerProvider.notifier);
-      await controller.loginWithGoogle();
-    }
 
     return Scaffold(
       body: Stack(
         children: [
           AbsorbPointer(
-            absorbing: loginState is LoginLoading,
+            absorbing: isLoading,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -104,9 +128,9 @@ class LoginScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                            
+
                           SizedBox(height: AppSpacingSize.xs),
-                            
+
                           FittedBox(
                             child: Text(
                               'Sign in to manage your smart irrigation system',
@@ -117,19 +141,19 @@ class LoginScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                            
+
                           SizedBox(height: AppSpacingSize.xl),
-                            
+
                           // Gambar
                           SizedBox(
                             width: 200,
                             child: Image.asset('lib/assets/images/login.png'),
                           ),
-                            
+
                           SizedBox(height: AppSpacingSize.xl),
                         ],
                       ),
-                            
+
                       // ! MID
                       Column(
                         spacing: AppSpacingSize.s,
@@ -141,7 +165,7 @@ class LoginScreen extends ConsumerWidget {
                             controller: emailController,
                             validator: AppValidator.email,
                           ),
-                            
+
                           // Password
                           TextFormFieldWidget(
                             label: 'Password',
@@ -150,7 +174,7 @@ class LoginScreen extends ConsumerWidget {
                             controller: passwordController,
                             validator: AppValidator.password,
                           ),
-                            
+
                           // Forgot password
                           Align(
                             alignment: Alignment.centerRight,
@@ -163,6 +187,11 @@ class LoginScreen extends ConsumerWidget {
                               ),
                               child: TextButton(
                                 onPressed: () {
+                                  ref
+                                      .read(authProvider.notifier)
+                                      .setAuthenticated(
+                                        AsyncValue.data(AuthToForgotPassword()),
+                                      );
                                   context.go('/reset-password');
                                 },
                                 style: TextButton.styleFrom(
@@ -183,9 +212,9 @@ class LoginScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                            
+
                       SizedBox(height: AppSpacingSize.xxl),
-                            
+
                       // ! BOTTOM
                       Column(
                         spacing: AppSpacingSize.l,
@@ -193,9 +222,9 @@ class LoginScreen extends ConsumerWidget {
                           // Sign In button
                           ButtonWidget(
                             text: "Sign In",
-                            onPressed: () => handleLogin(context),
+                            onPressed: () => handleLogin(),
                           ),
-                            
+
                           // Divider with text
                           Row(
                             children: [
@@ -217,11 +246,11 @@ class LoginScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                            
+
                           // Google Button
                           ButtonWidget(
                             text: "Google",
-                            onPressed: () => handleGoogleLogin(context),
+                            onPressed: () => handleGoogleLogin(),
                             svgAsset: SvgPicture.asset(
                               'lib/assets/icons/google.svg',
                               width: AppElementSize.m,
@@ -231,7 +260,7 @@ class LoginScreen extends ConsumerWidget {
                             foregroundColor: AppColors.gray,
                             borderColor: AppColors.grayLight,
                           ),
-                            
+
                           // Sign up text
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -272,14 +301,16 @@ class LoginScreen extends ConsumerWidget {
               ),
             ),
           ),
-          if (loginState is LoginLoading)
+          if (isLoading)
             Container(
-              color: const Color.fromARGB(55, 0, 0, 0), // semi-transparent background
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              color: const Color.fromARGB(
+                55,
+                0,
+                0,
+                0,
+              ), // semi-transparent background
+              child: const Center(child: CircularProgressIndicator()),
             ),
-
         ],
       ),
     );
