@@ -11,22 +11,14 @@ func InitRoutes(r *gin.Engine) {
 	{
 		AuthRoute(route)
 
-		// ! SEMENTARA
-		// DeviceRoute(route)
-		// PumpLogRoute(route)
-		// AiRoutes(route)
-		// SensorAggregateRoutes(route)
-		// AlarmRoute(route)
-
 		protected := route.Group("/")
 		protected.Use(middleware.JWTMiddleware())
 		{
-			// DeviceRoute(protected)
-			DeviceRoute(route)
-			PumpLogRoute(route)
-			AiRoutes(route)
-			SensorAggregateRoutes(route)
-			AlarmRoute(route)
+			DeviceRoute(protected)
+			PumpLogRoute(protected)
+			AiRoutes(protected)
+			SensorAggregateRoutes(protected)
+			AlarmRoute(protected)
 		}
 	}
 }

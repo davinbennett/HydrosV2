@@ -127,7 +127,8 @@ func UpdatePlantInfo(c *gin.Context) {
 
 func PairDevice(c *gin.Context) {
 	var req struct {
-		Code string `json:"code"`
+		Code   string `json:"code"`
+		UserID uint   `json:"user_id"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -135,13 +136,8 @@ func PairDevice(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("user_id")
-	if !exists {
-		utils.UnauthorizedResponse(c, "Unauthorized.")
-		return
-	}
 
-	deviceId, err := services.PairDevice(userID.(uint), req.Code)
+	deviceId, err := services.PairDevice(req.UserID, req.Code)
 	if err != "" {
 		utils.InternalServerErrorResponse(c, err)
 		return
@@ -152,30 +148,26 @@ func PairDevice(c *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(c, gin.H{
-		"device_id": deviceId,
-	})
+	utils.SuccessResponse(c, "Success pair.")
 }
 
 func UnpairDevice(c *gin.Context) {
-    deviceID := c.Param("id")
+	deviceID := c.Param("id")
 
-    userID, exists := c.Get("user_id")
-    if !exists {
-        utils.UnauthorizedResponse(c, "Unauthorized.")
-        return
-    }
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.UnauthorizedResponse(c, "Unauthorized.")
+		return
+	}
 
-    err := services.UnpairDevice(userID.(uint), deviceID)
-    if err != "" {
-        utils.InternalServerErrorResponse(c, err)
-        return
-    }
+	err := services.UnpairDevice(userID.(uint), deviceID)
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
+		return
+	}
 
-    utils.SuccessResponse(c, "Success Unpair.")
+	utils.SuccessResponse(c, "Success Unpair.")
 }
-
-
 
 func HandleSoilControl(c *gin.Context) {
 	deviceID := c.Param("id")

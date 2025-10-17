@@ -3,19 +3,22 @@ import 'package:equatable/equatable.dart';
 
 /// State untuk tiap device
 sealed class DevicePairState extends Equatable {
-  const DevicePairState();
-
   @override
   List<Object?> get props => [];
 }
 
+class DevicePairFailure extends DevicePairState {
+  final String message;
+  DevicePairFailure(this.message);
+}
+
 class Unpaired extends DevicePairState {
-  const Unpaired();
+  Unpaired();
 }
 
 class PairedNoPlant extends DevicePairState {
   final int deviceId;
-  const PairedNoPlant(this.deviceId);
+  PairedNoPlant(this.deviceId);
 
   @override
   List<Object?> get props => [deviceId];
@@ -23,7 +26,7 @@ class PairedNoPlant extends DevicePairState {
 
 class PairedWithPlant extends DevicePairState {
   final int deviceId;
-  const PairedWithPlant(this.deviceId);
+  PairedWithPlant(this.deviceId);
 
   @override
   List<Object?> get props => [deviceId];

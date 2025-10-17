@@ -36,6 +36,7 @@ func main() {
 		&models.User{},
 		&models.Alarm{},
 		&models.Device{},
+		&models.UserDevice{}, 
 		&models.PumpLog{},
 		&models.SensorAggregate{},
 	); err != nil {

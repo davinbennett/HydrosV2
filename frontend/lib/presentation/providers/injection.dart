@@ -1,16 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/data/impl/auth.dart';
+import 'package:frontend/data/impl/device.dart';
 import 'package:frontend/domain/repositories/auth.dart';
+import 'package:frontend/domain/repositories/device.dart';
 import 'package:frontend/domain/usecase/auth/login.dart';
 import 'package:frontend/domain/usecase/auth/new_password.dart';
 import 'package:frontend/domain/usecase/auth/register_with_email.dart';
 import 'package:frontend/domain/usecase/auth/reset_password.dart';
 import 'package:frontend/domain/usecase/auth/signup.dart';
 import 'package:frontend/domain/usecase/auth/verify_otp.dart';
+import 'package:frontend/domain/usecase/device/pair_device.dart';
 import 'package:frontend/infrastructure/api/auth_api.dart';
+import 'package:frontend/infrastructure/api/device_api.dart';
 import 'package:frontend/infrastructure/google_signin/auth.dart';
 import 'package:frontend/presentation/controllers/login_controller.dart';
 import 'package:frontend/presentation/controllers/new_password_controller.dart';
+import 'package:frontend/presentation/controllers/pair_device_controller.dart';
 import 'package:frontend/presentation/controllers/reset_password_controller.dart';
 import 'package:frontend/presentation/controllers/signup_controller.dart';
 import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
@@ -18,6 +23,9 @@ import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 // API & Firebase service
 final authApiProvider = Provider<AuthApi>((ref) {
   return AuthApi();
+});
+final deviceApiProvider = Provider<DeviceApi>((ref) {
+  return DeviceApi(ref);
 });
 
 final firebaseServiceProvider = Provider<GoogleSigninAuthService>((ref) {
@@ -29,6 +37,10 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final api = ref.read(authApiProvider);
   final firebase = ref.read(firebaseServiceProvider);
   return AuthImpl(api: api, firebaseService: firebase);
+});
+final deviceRepositoryProvider = Provider<DeviceRepository>((ref) {
+  final api = ref.read(deviceApiProvider);
+  return DeviceImpl(api: api);
 });
 
 // UseCase
@@ -67,6 +79,11 @@ final resetPasswordUsecaseProvider = Provider<ResetPasswordUseCase>((ref) {
 final newPasswordUsecaseProvider = Provider<NewPasswordUseCase>((ref) {
   final repo = ref.read(authRepositoryProvider);
   return NewPasswordUseCase(repo);
+});
+
+final pairDeviceUsecaseProvider = Provider<PairDeviceUsecase>((ref) {
+  final repo = ref.read(deviceRepositoryProvider);
+  return PairDeviceUsecase(repo);
 });
 
 // Controller
@@ -109,4 +126,9 @@ final resetPasswordControllerProvider = Provider<ResetPasswordController>((
 final newPasswordControllerProvider = Provider<NewPasswordController>((ref) {
   final usecase = ref.read(newPasswordUsecaseProvider);
   return NewPasswordController(newPasswordUsecase: usecase);
+});
+
+final pairDeviceControllerProvider = Provider<PairDeviceController>((ref) {
+  final usecase = ref.read(pairDeviceUsecaseProvider);
+  return PairDeviceController(pairDeviceUsecase: usecase);
 });

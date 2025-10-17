@@ -98,7 +98,7 @@ func PairDevice(userID uint, code string) (string, string) {
 		return "", err
 	}
 
-	err = repositories.AddDeviceToUser(userID, device.ID)
+	err = repositories.AddDeviceToUser(userID, code)
 	if err != "" {
 		return "", err
 	}

@@ -1,42 +1,41 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/presentation/states/device_state.dart';
 
-/// Provider utama untuk menyimpan dan mengatur daftar device
-final deviceProvider = StateProvider<DeviceState>((ref) {
-  return const DeviceState();
+final deviceProvider = StateNotifierProvider<DeviceNotifier, DeviceState>((
+  ref,
+) {
+  return DeviceNotifier();
 });
 
-/// Extension agar lebih enak dipakai
-extension DeviceProviderX on WidgetRef {
+
+class DeviceNotifier extends StateNotifier<DeviceState> {
+  DeviceNotifier() : super(const DeviceState());
+
   void setUnpaired(int deviceId) {
-    final current = read(deviceProvider);
-    final updated = Map<int, DevicePairState>.from(current.devices)
-      ..[deviceId] = const Unpaired();
-    read(deviceProvider.notifier).state = current.copyWith(devices: updated);
+    final updated = Map<int, DevicePairState>.from(state.devices)
+      ..[deviceId] = Unpaired();
+    state = state.copyWith(devices: updated);
   }
 
   void setPairedNoPlant(int deviceId) {
-    final current = read(deviceProvider);
-    final updated = Map<int, DevicePairState>.from(current.devices)
+    final updated = Map<int, DevicePairState>.from(state.devices)
       ..[deviceId] = PairedNoPlant(deviceId);
-    read(deviceProvider.notifier).state = current.copyWith(devices: updated);
+    state = state.copyWith(devices: updated);
   }
 
   void setPairedWithPlant(int deviceId) {
-    final current = read(deviceProvider);
-    final updated = Map<int, DevicePairState>.from(current.devices)
+    final updated = Map<int, DevicePairState>.from(state.devices)
       ..[deviceId] = PairedWithPlant(deviceId);
-    read(deviceProvider.notifier).state = current.copyWith(devices: updated);
+    state = state.copyWith(devices: updated);
   }
 
   void removeDevice(int deviceId) {
-    final current = read(deviceProvider);
-    final updated = Map<int, DevicePairState>.from(current.devices)
+    final updated = Map<int, DevicePairState>.from(state.devices)
       ..remove(deviceId);
-    read(deviceProvider.notifier).state = current.copyWith(devices: updated);
+    state = state.copyWith(devices: updated);
   }
 
   void resetDevices() {
-    read(deviceProvider.notifier).state = const DeviceState();
+    state = const DeviceState();
   }
 }

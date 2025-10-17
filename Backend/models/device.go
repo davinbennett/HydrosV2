@@ -14,9 +14,8 @@ type Device struct {
 	Location         string
 	ProgressPlan     int `gorm:"default:0"`
 	ProgressNow      int `gorm:"default:0"`
-	Code             *string
 	PlantName        *string
-	Users            []User `gorm:"many2many:user_devices"`
+	Users            []User `gorm:"many2many:user_devices;joinForeignKey:DeviceID;joinReferences:UserID"`
 	PumpLogs         []PumpLog
 	Alarms           []Alarm
 	SensorAggregates []SensorAggregate

@@ -9,7 +9,6 @@ import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/core/utils/validator.dart';
-import 'package:frontend/domain/entities/auth.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
 import 'package:frontend/presentation/providers/injection.dart';
 import 'package:frontend/presentation/states/auth_state.dart';

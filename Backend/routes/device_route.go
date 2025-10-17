@@ -12,13 +12,12 @@ func DeviceRoute(rg *gin.RouterGroup) {
 		r.POST("/:id/control-switch", controllers.HandlePumpControl)
 		r.POST("/:id/plant", controllers.AddPlant)
 		r.POST("/:id/control-soil", controllers.HandleSoilControl)
-
+		r.POST("/pair", controllers.PairDevice)
 		
 		r.GET("/:id/location", controllers.GetDeviceLocation)
 		r.GET("/:id/weather-status", controllers.GetWeatherStatus)
 		r.GET("/:id/plant", controllers.GetPlantInfo)
-		r.GET("/:id/pair", controllers.PairDevice)
-
+		
 		r.PATCH("/:id/plant", controllers.UpdatePlantInfo)
 
 		r.DELETE("/:id/unpair", controllers.UnpairDevice)

@@ -2,8 +2,7 @@ package middleware
 
 import (
 	"errors"
-	"fmt"
-	"net/http"
+	"main/utils"
 	"os"
 	"strings"
 
@@ -15,24 +14,25 @@ func JWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+			utils.UnauthorizedResponse(c, "Authorization header is required")
+			c.Abort()
+			return
+		}
+
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			utils.UnauthorizedResponse(c, "Invalid token format")
 			c.Abort()
 			return
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
-			c.Abort()
-			return
-		}
 
 		token, err := validateToken(tokenString)
 		if err != nil {
 			if errors.Is(err, jwt.ErrTokenExpired) {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has expired"})
+				utils.UnauthorizedResponse(c, "Token has expired")
 			} else {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+				utils.UnauthorizedResponse(c, "Invalid token")
 			}
 			c.Abort()
 			return
@@ -49,7 +49,7 @@ func JWTMiddleware() gin.HandlerFunc {
 				c.Set("user_id", userID)
 			}
 		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			utils.UnauthorizedResponse(c, "Invalid token")
 			c.Abort()
 			return
 		}
@@ -61,9 +61,9 @@ func JWTMiddleware() gin.HandlerFunc {
 func validateToken(tokenString string) (*jwt.Token, error) {
 	secret := os.Getenv("JWT_SECRET_KEY")
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
 		}
 		return []byte(secret), nil
 	})	

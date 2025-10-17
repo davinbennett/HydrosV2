@@ -101,7 +101,7 @@ func UpdatePlant(deviceID string, plantName, location string, progressPlan int, 
 
 func FindDeviceByCode(code string) (*models.Device, string) {
 	var device models.Device
-	if err := config.PostgresDB.Where("code = ?", code).First(&device).Error; err != nil {
+	if err := config.PostgresDB.Where("id = ?", code).First(&device).Error; err != nil {
 		return nil, "Device not found with the provided code."
 	}
 	return &device, ""
@@ -115,9 +115,10 @@ func AddDeviceToUser(userID uint, deviceID string) string {
 	}
 
 	var device models.Device
-	if err := config.PostgresDB.First(&device, deviceID).Error; err != nil {
-		return "Device not found."
+	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
+		return "Device not found"
 	}
+
 
 	if err := config.PostgresDB.Model(&user).Association("Devices").Append(&device); err != nil {
 		return "Failed to pair device with user."
