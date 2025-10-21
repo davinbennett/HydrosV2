@@ -9,6 +9,7 @@ import (
 	"main/models"
 	"main/repositories"
 	"main/routes"
+	"os"
 	"sync"
 	"time"
 
@@ -18,9 +19,16 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatalf("🔴 Env connection failed: %v", err)
-	}
+	if _, exists := os.LookupEnv("POSTGRES_HOST"); !exists {
+        // Jika env tidak ada, run lokal, load .env
+        if err := godotenv.Load(".env"); err != nil {
+            log.Fatalf("🔴 Failed to load .env file: %v", err)
+        } else {
+            log.Println("✅ Loaded local .env file")
+        }
+    } else {
+        log.Println("✅ Running in Docker, using environment variables from Compose")
+    }
 
 	if err := config.ConnectRedis(); err != nil {
 		log.Fatalf("🔴 Redis connection failed: %v", err)
