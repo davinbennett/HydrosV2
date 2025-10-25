@@ -3,11 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
-import 'package:frontend/presentation/screens/splash_screen.dart';
+import 'package:frontend/presentation/screens/editprof_screen.dart';
 import 'package:go_router/go_router.dart';
-import 'app_nav.dart';
-import 'auth_nav.dart';
-
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
@@ -28,28 +25,26 @@ final mainRouterProvider = Provider<GoRouter>((ref) {
   final authStatus = ref.watch(authProvider);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/editprofile',
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(
       ref.watch(authProvider.notifier).stream,
     ),
     redirect: (context, state) {
-      final isSplash = state.name == 'splash';
+      final isSplash = state.name == 'editprofile';
 
       if (authStatus == AuthStatus.loading) {
-        return isSplash ? null : '/splash';
+        return isSplash ? null : '/editprofile';
       }
 
       return null;
     },
     routes: [
       GoRoute(
-        path: '/splash',
-        name: 'splash',
-        builder: (context, state) => const SplashScreen(),
+        path: '/editprofile',
+        name: 'editprofile',
+        builder: (context, state) => const EditProfilePage (),
       ),
-      ...authRoutes, 
-      ...appRoutes
     ],
   );
 });
