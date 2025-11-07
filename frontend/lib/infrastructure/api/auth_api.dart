@@ -1,9 +1,13 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/data/models/auth.dart';
 import 'package:frontend/infrastructure/dio/dio_client.dart';
 
 class AuthApi {
-  final Dio _dio = DioClient.instance;
+  final Dio _dio;
+  final Ref ref;
+
+  AuthApi(this.ref) : _dio = ref.read(dioProvider);
 
   // Login email & password
   Future<AuthModel> loginWithEmail({

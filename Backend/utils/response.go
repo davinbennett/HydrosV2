@@ -8,78 +8,55 @@ import (
 
 type APIResponse struct {
 	Code    int         `json:"code"`
-	Data    any `json:"data,omitempty"`
+	Data    any         `json:"data,omitempty"`
 	Error   string      `json:"error,omitempty"`
 	Message string      `json:"message,omitempty"`
 }
 
-func SuccessResponse(c *gin.Context, data any) {
-	c.JSON(http.StatusOK, APIResponse{
-		Code: 200,
-		Data: data,
+func jsonResponse(c *gin.Context, status int, data any, message string) {
+	c.JSON(status, APIResponse{
+		Code:    status,
+		Data:    data,
+		Message: message,
 	})
+}
+
+func SuccessResponse(c *gin.Context, data any) {
+	jsonResponse(c, http.StatusOK, data, "")
 }
 
 func CreatedResponse(c *gin.Context, data any) {
-	c.JSON(http.StatusCreated, APIResponse{
-		Code: 200,
-		Data: data,
-	})
+	jsonResponse(c, http.StatusCreated, data, "")
 }
 
 func UpdatedResponse(c *gin.Context, data any) {
-	c.JSON(http.StatusOK, APIResponse{
-		Code:    200,
-		Data:    data,
-		Message: "Updated successfully",
-	})
+	jsonResponse(c, http.StatusOK, data, "Updated successfully")
 }
 
 func DeletedResponse(c *gin.Context) {
-	c.JSON(http.StatusOK, APIResponse{
-		Code:    200,
-		Message: "Deleted successfully",
-	})
+	jsonResponse(c, http.StatusOK, nil, "Deleted successfully")
 }
 
 func BadRequestResponse(c *gin.Context, message string) {
-	c.JSON(http.StatusBadRequest, APIResponse{
-		Code:  500,
-		Message: message,
-	})
+	jsonResponse(c, http.StatusBadRequest, nil, message)
 }
 
 func UnauthorizedResponse(c *gin.Context, message string) {
-	c.JSON(http.StatusUnauthorized, APIResponse{
-		Code:  500,
-		Message: message,
-	})
+	jsonResponse(c, http.StatusUnauthorized, nil, message)
 }
 
 func ForbiddenResponse(c *gin.Context, message string) {
-	c.JSON(http.StatusForbidden, APIResponse{
-		Code:  500,
-		Message: message,
-	})
+	jsonResponse(c, http.StatusForbidden, nil, message)
 }
 
 func NotFoundResponse(c *gin.Context, message string) {
-	c.JSON(http.StatusNotFound, APIResponse{
-		Code:  http.StatusNotFound,
-		Message: message,
-	})
+	jsonResponse(c, http.StatusNotFound, nil, message)
 }
 
 func ConflictResponse(c *gin.Context, message string) {
-	c.JSON(http.StatusConflict, APIResponse{
-		Code:  500,
-		Message: message,
-	})
+	jsonResponse(c, http.StatusConflict, nil, message)
 }
 
 func InternalServerErrorResponse(c *gin.Context, message string) {
-	c.JSON(http.StatusInternalServerError, APIResponse{
-		Code:  500,
-		Message: message,
-	})
+	jsonResponse(c, http.StatusInternalServerError, nil, message)
 }

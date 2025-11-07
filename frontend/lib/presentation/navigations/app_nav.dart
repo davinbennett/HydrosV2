@@ -1,19 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/themes/colors.dart';
+import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
+import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:frontend/presentation/providers/device_provider.dart';
+import 'package:frontend/presentation/screens/history_screen.dart';
 import 'package:frontend/presentation/screens/home_screen.dart';
 import 'package:frontend/presentation/screens/pair_device_screen.dart';
+import 'package:frontend/presentation/states/auth_state.dart';
+import 'package:frontend/presentation/states/device_state.dart';
 import 'package:go_router/go_router.dart';
 
-class BottomNavBar extends StatefulWidget {
+import '../screens/alarm_screen.dart';
+import '../screens/service_screen.dart';
+
+class BottomNavBar extends ConsumerStatefulWidget {
   const BottomNavBar({super.key});
 
   @override
-  State<BottomNavBar> createState() => _BottomNavBarState();
+  ConsumerState<BottomNavBar> createState() => _BottomNavBarState();
 }
 
-class _BottomNavBarState extends State<BottomNavBar> {
+class _BottomNavBarState extends ConsumerState<BottomNavBar> {
   int _currentIndex = 0;
 
   final Map<int, Widget> _pageCache = {};
@@ -29,7 +40,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       icon: Icons.history_outlined,
       activeIcon: Icons.history,
       label: "History",
-      page: Center(child: Text("History Page")),
+      page: HistoryScreen(),
     ),
     _NavItem(
       icon: Icons.tap_and_play_outlined,
@@ -41,7 +52,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       icon: Icons.settings_input_antenna_outlined,
       activeIcon: Icons.settings_input_antenna,
       label: "Service",
-      page: Center(child: Text("Service Page")),
+      page: ServiceScreen(),
     ),
     _NavItem(
       icon: Icons.account_circle_outlined,
@@ -64,6 +75,35 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Widget build(BuildContext context) {
     final mq = MediaQueryHelper.of(context);
 
+    ref.listen<AsyncValue<AuthState>>(authProvider, (prev, next) {
+      final state = next.value;
+      if (state is AuthSessionExpired) {
+        logger.i("EXP");
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder:
+                (_) => AlertDialog(
+                  title: Text("Session expired"),
+                  content: Text(
+                    "Your session has expired. Please login again.",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        ref.read(authProvider.notifier).logout();
+                        context.go('/login');
+                      },
+                      child: Text("OK"),
+                    ),
+                  ],
+                ),
+          );
+        });
+      }
+    });
+
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         systemNavigationBarColor:
@@ -79,11 +119,13 @@ class _BottomNavBarState extends State<BottomNavBar> {
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
         onTap: (index) {
-          if (index == 2) {
+          final deviceState = ref.read(deviceProvider);
+
+          if (index == 2 && !deviceState.hasPairedDevice) {
             context.pushNamed('pair-device');
             return;
           }
-
+          
           setState(() {
             _currentIndex = index;
           });
@@ -136,5 +178,10 @@ final appRoutes = <GoRoute>[
     name: 'pair-device',
     path: '/pair-device',
     builder: (context, state) => const PairDeviceScreen(),
+  ),
+  GoRoute(
+    name: 'alarm',
+    path: '/alarm',
+    builder: (context, state) => const AlarmScreen(),
   ),
 ];

@@ -120,7 +120,7 @@ func handleSensorData(client mqtt.Client, msg mqtt.Message) string {
 		"data": map[string]any{
 			"temperature":   data.Temperature,
 			"humidity":      data.Humidity,
-			"soil_moisture": data.SoilMoisture,
+			"soil": data.SoilMoisture,
 		},
 	}
 
@@ -130,7 +130,7 @@ func handleSensorData(client mqtt.Client, msg mqtt.Message) string {
 	}
 
 	log.Printf("WS > sensor data > jsonMsg:%s\n", jsonMsg)
-	// config.Broadcast <- jsonMsg
+	config.Broadcast <- jsonMsg
 
 	return ""
 }

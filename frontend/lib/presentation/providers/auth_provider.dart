@@ -43,4 +43,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<AuthState>> {
   void setUnauthenticated() {
     state = AsyncValue.data(AuthUnauthenticated());
   }
+
+  void setSessionExpired() { 
+    state = AsyncValue.data(AuthSessionExpired());
+  }
 }

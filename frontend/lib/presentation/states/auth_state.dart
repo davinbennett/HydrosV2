@@ -42,3 +42,7 @@ class AuthPasswordReset extends AuthState {
 class AuthToForgotPassword extends AuthState {
   AuthToForgotPassword();
 }
+
+class AuthSessionExpired extends AuthState {
+  AuthSessionExpired();
+}

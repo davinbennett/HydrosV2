@@ -26,8 +26,8 @@ func ContinueWithGoogle(idToken string) (string, uint, string) {
 	picture := payload.Claims["picture"].(string)
 	name := payload.Claims["name"].(string)
 
-	exists, err2 := repositories.IsEmailExists(email)
-	if err2 != "" || exists {
+	_, err2 := repositories.IsEmailExists(email)
+	if err2 != "This email is already registered as a Google account." {
 		return "", 0, err2
 	}
 

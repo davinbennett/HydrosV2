@@ -119,7 +119,6 @@ func AddDeviceToUser(userID uint, deviceID string) string {
 		return "Device not found"
 	}
 
-
 	if err := config.PostgresDB.Model(&user).Association("Devices").Append(&device); err != nil {
 		return "Failed to pair device with user."
 	}

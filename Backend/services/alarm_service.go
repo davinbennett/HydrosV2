@@ -34,7 +34,7 @@ func GetDeviceAlarms(deviceID string) (map[string]any, string) {
 		next = nextAlarm.Format(time.RFC3339)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"next_alarm": next,
 		"list_alarm": list,
 	}, ""

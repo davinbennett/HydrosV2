@@ -1,18 +1,26 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/domain/usecase/device/pair_device.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/states/device_state.dart';
+import 'package:intl/intl.dart';
 
 class PairDeviceController {
   final PairDeviceUsecase pairDeviceUsecase;
-  PairDeviceController({required this.pairDeviceUsecase});
+  final Ref ref;
+  
+  PairDeviceController({required this.pairDeviceUsecase , required this.ref});
 
   Future<DevicePairState> pairDevice(String code, int userId) async {
     try {
       await pairDeviceUsecase.execute(code, userId);
 
-      await SecureStorage.saveDeviceId(code);
+      final now = DateTime.now();
+      final formatted = DateFormat('dd-MM-yyyy HH:mm').format(now);
 
-      return PairedNoPlant(int.parse(code));
+      await SecureStorage.saveDeviceId(code);
+      await SecureStorage.savePairedAt(formatted);
+
+      return PairedNoPlant(code);
     } catch (e) {
       return DevicePairFailure(e.toString());
     }

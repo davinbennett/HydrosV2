@@ -431,7 +431,7 @@ void publishPumpStatusWithControl(int controlBy, bool pumpIsOn)
   doc["pump_status"] = pumpIsOn ? 1 : 2;     // 1 = ON, 2 = OFF
   doc["type"] = 2;                           // misalnya: 2 untuk pump status
   doc["control_by"] = (int)controlBy;        // 1=Device, 2=Switch, 3=Soil, 4=Alarm
-  doc["time"] = now.unixtime() - (7 * 3600); // pakai RTC/epoch timestamp : kurangi 7 jam biar sinkron dg be
+  doc["time"] = now.unixtime() - (1 * 3600); // pakai RTC/epoch timestamp : kurangi 7 jam biar sinkron dg be
   doc["soil_value"] = currentMoisturePercent;
 
   char payload[256];
@@ -796,7 +796,7 @@ void lcdDisplay(){
       lcd.setCursor(3, 0);
       lcd.print(buffer);
 
-      sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+      sprintf(buffer, "%02d:%02d:%02d", (now.hour()) % 24, now.minute(), now.second());
       lcd.setCursor(4, 1);
       lcd.print(buffer);
 
@@ -861,6 +861,7 @@ void setup()
   sub_enabledAlarmTopic = "from-app/" + device_id + "/control-enabled-alarm";
   pub_pumpTopic = "from-esp/" + device_id + "/pump-status";
   pub_alarmTopic = "from-esp/" + device_id + "/delete-alarm";
+  pub_sensorTopic = "from-esp/" + device_id + "/sensor";
 
   Serial.print("Device ID: ");
   Serial.println(device_id);
@@ -936,6 +937,7 @@ void setup()
 void loop()
 {
   now = rtc.now();
+  now = DateTime(now.unixtime() + (7 * 3600)); // Add 7 hours for GMT+7
   String currentTime = formatTime(now.hour(), now.minute());
   int currentDay = now.dayOfTheWeek(); // 0=Sunday, 1=Monday, ...
 

@@ -5,10 +5,11 @@ import 'package:frontend/presentation/providers/auth_provider.dart';
 import 'package:frontend/presentation/states/auth_state.dart';
 
 class DeviceApi {
-  final Dio _dio = DioClient.instance;
 
+  final Dio _dio;
   final Ref ref;
-  DeviceApi(this.ref);
+
+  DeviceApi(this.ref) : _dio = ref.read(dioProvider);
 
   Future<bool> pairDeviceApi({
     required String code,

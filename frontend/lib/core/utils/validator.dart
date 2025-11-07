@@ -6,6 +6,13 @@ class AppValidator {
     return null;
   }
 
+  static String? deviceCodeRequired(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return "Device code is required";
+    }
+    return null;
+  }
+
   static String? email(String? value) {
     const pattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
     final regex = RegExp(pattern);

@@ -97,5 +97,6 @@ func main() {
 	
 	// ! RUN SERVER
 	routes.InitRoutes(r)
+	log.Println("✅ Server is Running in 8081")
 	r.Run(":8081")
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func StartBroadcaster() string{
+func StartBroadcaster() {
 	for msg := range config.Broadcast {
 		config.ClientsMutex.Lock()
 		for conn := range config.Clients {
@@ -19,6 +19,5 @@ func StartBroadcaster() string{
 		}
 		config.ClientsMutex.Unlock()
 	}
-
-	return ""
 }
+

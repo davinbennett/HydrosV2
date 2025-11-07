@@ -46,6 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => isLoading = false);
 
     if (result is AuthAuthenticated) {
+      // Set Global State
       ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
       
       context.go('/home');

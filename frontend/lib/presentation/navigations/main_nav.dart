@@ -35,8 +35,6 @@ class AuthChangeNotifier extends ChangeNotifier {
 }
 
 
-
-
 final mainRouterProvider = Provider<GoRouter>((ref) {
   // final authNotifier = ref.watch(authProvider.notifier);
   

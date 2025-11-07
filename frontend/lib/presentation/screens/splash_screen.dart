@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:frontend/presentation/providers/device_provider.dart';
 import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,10 +37,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       final authState = ref.read(authProvider);
 
       authState.when(
-        data: (state) {
+        data: (state) async {
           if (state is AuthAuthenticated) {
+            final deviceNotifier = ref.read(deviceProvider.notifier);
+
+            // Ambil data pairing terakhir dari storage
+            final deviceId = await SecureStorage.getDeviceId();
+            final hasPlant = await SecureStorage.getHasPlant();
+
+            if (deviceId != null && deviceId.isNotEmpty) {
+              if (hasPlant == true) {
+                deviceNotifier.setPairedWithPlant(deviceId);
+              } else {
+                deviceNotifier.setPairedNoPlant(deviceId);
+              }
+            } else {
+              deviceNotifier.resetDevices();
+            }
+
+            if (!mounted) return;
             context.go('/home');
           } else {
+            if (!mounted) return;
             context.go('/login');
           }
         },
@@ -53,6 +72,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Widget build(BuildContext context) {
     // ! delete secure storage sementara
     // Future.microtask(() => SecureStorage .clearAll());
+    // Future.microtask(() {
+    //   SecureStorage.deleteDeviceId();
+    //   SecureStorage.deletePairedAt();
+    // });
 
     return Scaffold(
       body: Container(

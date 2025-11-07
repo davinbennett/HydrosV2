@@ -22,7 +22,7 @@ import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 
 // API & Firebase service
 final authApiProvider = Provider<AuthApi>((ref) {
-  return AuthApi();
+  return AuthApi(ref);
 });
 final deviceApiProvider = Provider<DeviceApi>((ref) {
   return DeviceApi(ref);
@@ -130,5 +130,5 @@ final newPasswordControllerProvider = Provider<NewPasswordController>((ref) {
 
 final pairDeviceControllerProvider = Provider<PairDeviceController>((ref) {
   final usecase = ref.read(pairDeviceUsecaseProvider);
-  return PairDeviceController(pairDeviceUsecase: usecase);
+  return PairDeviceController(pairDeviceUsecase: usecase, ref: ref);
 });

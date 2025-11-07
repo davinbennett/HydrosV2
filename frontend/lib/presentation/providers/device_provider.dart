@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/states/device_state.dart';
 
 final deviceProvider = StateNotifierProvider<DeviceNotifier, DeviceState>((
@@ -9,28 +10,43 @@ final deviceProvider = StateNotifierProvider<DeviceNotifier, DeviceState>((
 
 
 class DeviceNotifier extends StateNotifier<DeviceState> {
-  DeviceNotifier() : super(const DeviceState());
+  DeviceNotifier() : super(const DeviceState()) {
+    _restoreFromStorage();
+  }
 
-  void setUnpaired(int deviceId) {
-    final updated = Map<int, DevicePairState>.from(state.devices)
+  Future<void> _restoreFromStorage() async {
+    final deviceId = await SecureStorage.getDeviceId();
+    final hasPlant = await SecureStorage.getHasPlant();
+
+    if (deviceId != null && deviceId.isNotEmpty) {
+      if (hasPlant == true) {
+        setPairedWithPlant(deviceId);
+      } else {
+        setPairedNoPlant(deviceId);
+      }
+    }
+  }
+
+  void setUnpaired(String deviceId) {
+    final updated = Map<String, DevicePairState>.from(state.devices)
       ..[deviceId] = Unpaired();
     state = state.copyWith(devices: updated);
   }
 
-  void setPairedNoPlant(int deviceId) {
-    final updated = Map<int, DevicePairState>.from(state.devices)
+  void setPairedNoPlant(String deviceId) {
+    final updated = Map<String, DevicePairState>.from(state.devices)
       ..[deviceId] = PairedNoPlant(deviceId);
     state = state.copyWith(devices: updated);
   }
 
-  void setPairedWithPlant(int deviceId) {
-    final updated = Map<int, DevicePairState>.from(state.devices)
+  void setPairedWithPlant(String deviceId) {
+    final updated = Map<String, DevicePairState>.from(state.devices)
       ..[deviceId] = PairedWithPlant(deviceId);
     state = state.copyWith(devices: updated);
   }
 
-  void removeDevice(int deviceId) {
-    final updated = Map<int, DevicePairState>.from(state.devices)
+  void removeDevice(String deviceId) {
+    final updated = Map<String, DevicePairState>.from(state.devices)
       ..remove(deviceId);
     state = state.copyWith(devices: updated);
   }

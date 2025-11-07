@@ -10,30 +10,42 @@ import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
-import 'package:frontend/presentation/states/auth_state.dart';
+import 'package:frontend/presentation/providers/device_provider.dart';
+import 'package:frontend/presentation/providers/sensor_provider.dart';
 import 'package:frontend/presentation/states/device_state.dart';
 import 'package:frontend/presentation/widgets/global/app_bar.dart';
 import 'package:frontend/presentation/widgets/global/button.dart';
 import 'package:frontend/presentation/widgets/home/pie_chart.dart';
 import 'package:frontend/presentation/widgets/home/status_indicator.dart';
 
-class HomeScreen extends ConsumerWidget {
-  HomeScreen({super.key});
+import '../../core/utils/parse_to_double.dart';
+import '../controllers/home_controller.dart';
 
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  ConsumerState<ConsumerStatefulWidget> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomeScreen> {
   Future<void> _logSecureStorage() async {
     final token = await SecureStorage.getAccessToken();
     final userId = await SecureStorage.getUserId();
     final deviceId = await SecureStorage.getDeviceId();
+    final pairedAt = await SecureStorage.getPairedAt();
 
     logger.i('🔐 Access Token: $token');
     logger.i('👤 User ID: $userId');
     logger.i('📱 Device ID: $deviceId');
+    logger.i('⏱️ Paired At: $pairedAt');
   }
 
   // Form
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  late final HomeController homeController;
 
   Widget addPlantDialog(BuildContext context) {
     return Dialog(
@@ -116,87 +128,88 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  // Widget _buildUI(GlobalDeviceState state, BuildContext context) {
-  //   if (state is UnPaired) {
-  //     return Padding(
-  //       padding: EdgeInsets.all(AppSpacingSize.l),
-  //       child: Column(
-  //         spacing: AppSpacingSize.l,
-  //         children: [
-  //           Text(
-  //             'No Plant Added Yet',
-  //             style: TextStyle(
-  //               fontSize: AppFontSize.l,
-  //               fontWeight: AppFontWeight.medium,
-  //             ),
-  //           ),
-  //           Image.asset(
-  //             'lib/assets/images/no_plant_add.png',
-  //             width: 126,
-  //             height: 120,
-  //           ),
-  //           FittedBox(
-  //             child: Text(
-  //               'Make sure your device is paired to begin adding plants.',
-  //               style: TextStyle(fontSize: AppFontSize.m),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   } else if (state is PairedNoPlant) {
-  //     return Padding(
-  //       padding: EdgeInsets.all(AppSpacingSize.l),
-  //       child: Column(
-  //         spacing: AppSpacingSize.l,
-  //         children: [
-  //           Text(
-  //             'No Plant Added Yet',
-  //             style: TextStyle(
-  //               fontSize: AppFontSize.l,
-  //               fontWeight: AppFontWeight.medium,
-  //             ),
-  //           ),
-  //           Image.asset(
-  //             'lib/assets/images/no_plant_add.png',
-  //             width: 126,
-  //             height: 120,
-  //           ),
-  //           ButtonWidget(
-  //             text: "+ Add Plant",
-  //             onPressed: () {
-  //               showDialog(context: context, builder: (_) => addPlantDialog(context));
-  //             },
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   } else if (state is PairedWithPlant) {
-  //     return Text("login, sudah pair, dan sudah ada plant");
-  //   } else {
-  //     return Text("Menunggu...");
-  //   }
-  // }
+  Widget _buildUI(DevicePairState state, BuildContext context) {
+    if (state is PairedNoPlant) {
+      return Padding(
+        padding: EdgeInsets.all(AppSpacingSize.l),
+        child: Column(
+          spacing: AppSpacingSize.l,
+          children: [
+            Text(
+              'No Plant Added Yet',
+              style: TextStyle(
+                fontSize: AppFontSize.l,
+                fontWeight: AppFontWeight.medium,
+              ),
+            ),
+            Image.asset(
+              'lib/assets/images/no_plant_add.png',
+              width: 126,
+              height: 120,
+            ),
+            ButtonWidget(
+              text: "+ Add Plant",
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => addPlantDialog(context),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    } else if (state is PairedWithPlant) {
+      return Text("login, sudah pair, dan sudah ada plant");
+    }
+    return const SizedBox.shrink(); // Default return for unhandled states
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    homeController = ref.read(homeControllerProvider.notifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listenManual(deviceProvider, (previous, next) {
+        final activePair = next.activePairState;
+        if (activePair != null) {
+          homeController.init();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    homeController.stopSensorListener();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final mq = MediaQueryHelper.of(context);
-    // final globalDeviceState = ref.watch(globalDeviceProvider);
 
-    // ref.read(globalDeviceProvider.notifier).setUnPaired();
-    // ref.listen<GlobalDeviceState>(globalDeviceProvider, (prev, next) {
-    //   if (next is PairedNoPlant) {
-    //     logger.i("Prev: $prev, Next: $next");
-    //   }
-    // });
+    final homeController = ref.watch(homeControllerProvider);
+    final sensorData = homeController['data'] ?? {};
+    final deviceState = ref.watch(deviceProvider);
 
-    _logSecureStorage();
+    final pairState = deviceState.activePairState;
 
-    final location = 'Jakarta, Indonesia';
-    final temperature = 27;
-    final temperatureDesc = 'Cloudy';
-    final humidity = 100.0;
-    final soil = 20.0;
+    // _logSecureStorage();
+
+    final location = pairState != null ? 'Jakarta, Indonesia' : '-';
+    final temperatureDesc = pairState != null ? 'Cloudy' : '-';
+    final temperature = pairState != null ? parseDouble(sensorData['temperature']) : '--';
+    final humidity = parseDouble(sensorData['humidity']);
+    final soil = parseDouble(sensorData['soil']);
+
+    if (pairState is PairedNoPlant) {
+      logger.i("Pair tanpa plant: $pairState");
+    } else if (pairState is PairedWithPlant) {
+      logger.i("Pair dengan plant: $pairState");
+    } else {
+      logger.i("Belum pair");
+    }
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -207,7 +220,15 @@ class HomeScreen extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            AppBarWidget(type: AppBarType.main, title: "Hi, Hydromers 👋"),
+            (pairState == null)
+                ? AppBarWidget(
+                  type: AppBarType.withoutNotif,
+                  title: "Hi, Hydromers 👋",
+                )
+                : AppBarWidget(
+                  type: AppBarType.main,
+                  title: "Hi, Hydromers 👋",
+                ),
 
             Container(
               decoration: BoxDecoration(
@@ -335,18 +356,20 @@ class HomeScreen extends ConsumerWidget {
                     SizedBox(height: AppSpacingSize.l),
 
                     Row(
-                      spacing: AppSpacingSize.xs,
+                      spacing: AppSpacingSize.s,
                       children: [
                         Icon(
                           Icons.info_outline_rounded,
                           size: AppElementSize.s,
                           color: AppColors.gray,
                         ),
-                        Text(
-                          'Data updates every 10 seconds',
-                          style: TextStyle(
-                            fontSize: AppFontSize.s,
-                            color: AppColors.gray,
+                        Expanded(
+                          child: Text(
+                            'Data updates in real-time.',
+                            style: TextStyle(
+                              fontSize: AppFontSize.s,
+                              color: AppColors.gray,
+                            ),
                           ),
                         ),
                       ],
@@ -375,14 +398,45 @@ class HomeScreen extends ConsumerWidget {
 
             SizedBox(height: AppSpacingSize.xs),
 
-            // Container(
-            //   decoration: BoxDecoration(
-            //     color: AppColors.white,
-            //     borderRadius: BorderRadius.circular(AppRadius.rm),
-            //     border: Border.all(color: AppColors.borderOrange, width: 0.7),
-            //   ),
-            //   child: _buildUI(globalDeviceState, context),
-            // ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(AppRadius.rm),
+                border: Border.all(color: AppColors.borderOrange, width: 0.7),
+              ),
+              child:
+                  // KALO BLOM PAIR
+                  (pairState == null)
+                      ? Padding(
+                        padding: EdgeInsets.all(AppSpacingSize.l),
+                        child: Column(
+                          spacing: AppSpacingSize.l,
+                          children: [
+                            Text(
+                              'Device Not Paired Yet',
+                              style: TextStyle(
+                                fontSize: AppFontSize.l,
+                                fontWeight: AppFontWeight.medium,
+                              ),
+                            ),
+                            Image.asset(
+                              'lib/assets/images/no_plant_add.png',
+                              width: 126,
+                              height: 120,
+                            ),
+                            FittedBox(
+                              child: Text(
+                                'Make sure your device is paired to begin adding plants.',
+                                style: TextStyle(fontSize: AppFontSize.m),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : _buildUI(pairState, context),
+            ),
+
+            SizedBox(height: AppSpacingSize.l),
           ],
         ),
       ),

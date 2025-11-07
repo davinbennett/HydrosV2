@@ -1,6 +1,6 @@
 // presentation/states/device_state.dart
 import 'package:equatable/equatable.dart';
-
+import 'package:collection/collection.dart';
 /// State untuk tiap device
 sealed class DevicePairState extends Equatable {
   @override
@@ -17,7 +17,7 @@ class Unpaired extends DevicePairState {
 }
 
 class PairedNoPlant extends DevicePairState {
-  final int deviceId;
+  final String deviceId;
   PairedNoPlant(this.deviceId);
 
   @override
@@ -25,21 +25,51 @@ class PairedNoPlant extends DevicePairState {
 }
 
 class PairedWithPlant extends DevicePairState {
-  final int deviceId;
+  final String deviceId;
   PairedWithPlant(this.deviceId);
 
   @override
   List<Object?> get props => [deviceId];
 }
 
+/// ------------------------------
 /// State global menyimpan semua device
+/// ------------------------------
 class DeviceState extends Equatable {
-  final Map<int, DevicePairState> devices;
+  final Map<String, DevicePairState> devices;
 
   const DeviceState({this.devices = const {}});
 
-  DeviceState copyWith({Map<int, DevicePairState>? devices}) {
+  DeviceState copyWith({Map<String, DevicePairState>? devices}) {
     return DeviceState(devices: devices ?? this.devices);
+  }
+
+  // helper: cek status state device saat ini
+  DevicePairState? get activePairState => devices.values.firstWhereOrNull(
+    (state) => state is PairedNoPlant || state is PairedWithPlant,
+  );
+
+
+  /// Cek apakah ada device yang sudah paired (tanpa/ dengan plant)
+  bool get hasPairedDevice {
+    return devices.values.any(
+      (state) => state is PairedNoPlant || state is PairedWithPlant,
+    );
+  }
+
+  /// Ambil state dari device tertentu
+  DevicePairState? getDeviceState(String deviceId) => devices[deviceId];
+
+  /// Ambil deviceId yang sudah paired (jika ada)
+  String? get pairedDeviceId {
+    try {
+      final entry = devices.entries.firstWhere(
+        (e) => e.value is PairedNoPlant || e.value is PairedWithPlant,
+      );
+      return entry.key;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

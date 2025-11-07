@@ -13,6 +13,7 @@ class AppColors {
   static const blue = Color(0xFF38ACFC);
   static const grayLight = Color(0xFFBFBFBF);
   static const gray = Color(0xFF5A5A5A);
+  static const grayMedium = Color.fromARGB(128, 33, 33, 33);
 
   static const borderOrange = Color(0xFFEAC784);
   static const grayDivider = Color.fromARGB(104, 189, 189, 189);
