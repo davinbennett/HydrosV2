@@ -13,7 +13,7 @@ dependencies:
   equatable: ^2.0.7
   firebase_auth: ^6.0.0
   firebase_core: ^4.0.0
-  fl_chart: ^1.0.0
+  fl_chart: ^1.1.1
   fluentui_system_icons: ^1.1.273
   flutter:
     sdk: flutter

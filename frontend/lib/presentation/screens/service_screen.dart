@@ -105,7 +105,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                 ],
               ),
 
-              SizedBox(height: AppSpacingSize.s),
+              SizedBox(height: AppSpacingSize.xs),
 
               Container(
                 decoration: BoxDecoration(
@@ -229,7 +229,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                 ],
               ),
 
-              SizedBox(height: AppSpacingSize.s),
+              SizedBox(height: AppSpacingSize.xs),
 
               IntrinsicHeight(
                 child: Row(
@@ -310,19 +310,23 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                             width: 0.7,
                           ),
                         ),
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacingSize.l),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                top: AppSpacingSize.l, 
+                                left: AppSpacingSize.l,
+                                right: AppSpacingSize.l
+                              ),
+                              child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   HugeIcon(
                                     icon:
                                         HugeIcons
-                                            .strokeRoundedSoilTemperatureField,
+                                            .strokeRoundedSoilMoistureField,
                                     size: AppElementSize.xl,
                                   ),
                                   Text(
@@ -334,32 +338,37 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                                   ),
                                 ],
                               ),
-                              SfRangeSlider(
-                                min: 0.0,
-                                max: 100.0,
-                                values: soilSlider,
-                                interval: 50,
-                                showTicks: true,
-                                showLabels: true,
-                                enableTooltip: true,
-                                onChanged:
-                                    (SfRangeValues values) =>
-                                        _handleSoilSetting(values),
-                                stepSize: 1,
-                                activeColor: AppColors.orange,
+                            ),
+                            SfRangeSlider(
+                              min: 0.0,
+                              max: 100.0,
+                              values: soilSlider,
+                              interval: 50,
+                              showTicks: true,
+                              showLabels: true,
+                              enableTooltip: true,
+                              onChanged:
+                                  (SfRangeValues values) =>
+                                      _handleSoilSetting(values),
+                              stepSize: 1,
+                              activeColor: AppColors.orange,
+                            ),
+                            Padding(
+                              padding:EdgeInsets.only(
+                                top: AppSpacingSize.xs, 
+                                left: AppSpacingSize.l,
+                                right: AppSpacingSize.l,
+                                bottom: AppSpacingSize.l
                               ),
-                              Padding(
-                                padding: EdgeInsets.only(top:AppSpacingSize.xs),
-                                child: Text(
-                                  'Set soil moisture range for auto irrigation',
-                                  style: TextStyle(
-                                    color: AppColors.grayMedium,
-                                    fontSize: AppFontSize.s,
-                                  ),
+                              child: Text(
+                                'Set soil moisture range for auto irrigation',
+                                style: TextStyle(
+                                  color: AppColors.grayMedium,
+                                  fontSize: AppFontSize.s,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
