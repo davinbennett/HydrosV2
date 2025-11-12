@@ -10,9 +10,25 @@ class DeviceImpl implements DeviceRepository {
     return api.pairDeviceApi(code: code, userId: userId);
   }
 
+  @override
   Future<bool> controlPumpSwitchImpl(String devideId, bool switchValue) {
-    return api.controlPumpSwitchApi(devideId: devideId, switchValue: switchValue,
+    return api.controlPumpSwitchApi(
+      devideId: devideId,
+      switchValue: switchValue,
     );
   }
 
+  @override
+  Future<bool> controlPumpSoilSettingImpl(String devideId, int minSoilSetting, int maxSoilSetting) {
+    return api.controlPumpSoilSettingApi(
+      devideId: devideId,
+      minSoilSetting: minSoilSetting,
+      maxSoilSetting: maxSoilSetting,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSoilSettingImpl(String devideId) {
+    return api.getSoilSettingApi(devideId: devideId);
+  }
 }

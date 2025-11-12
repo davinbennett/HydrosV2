@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/themes/colors.dart';
@@ -31,11 +33,55 @@ class ServiceScreen extends ConsumerStatefulWidget {
 late DeviceStatusState device;
 
 class _ServicePageState extends ConsumerState<ServiceScreen> {
-  SfRangeValues soilSlider = SfRangeValues(40.0, 80.0);
+  SfRangeValues soilSlider = SfRangeValues(0.0, 0.0);
   bool isLoading = false;
+  Timer? _debounceTimer;
 
-  // @override
-  // bool get wantKeepAlive => true;
+  @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() async {
+      await _loadSoilSetting();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadSoilSetting() async {
+    final deviceId = await SecureStorage.getDeviceId();
+    final serviceController = ref.read(serviceControllerProvider);
+
+    try {
+      final result = await serviceController.getSoilSettingController(
+        deviceId!,
+      );
+
+      if (!mounted) return;
+
+      if (result.isNotEmpty) {
+        final min = result['min_soil_setting']?.toDouble() ?? 0.0;
+        final max = result['max_soil_setting']?.toDouble() ?? 100.0;
+
+        setState(() {
+          soilSlider = SfRangeValues(min, max);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   Future<void> _handleSwitchPump(bool value) async {
     if (!mounted) return;
@@ -65,7 +111,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
 
       setState(() => isLoading = false);
 
-      if (result == 'false') {
+      if (result == false) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to control pump. Try again.'),
@@ -79,7 +125,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Failed to control pump. Try again."),
+          content: Text(e.toString()),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -89,6 +135,56 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
   Future<void> _handleSoilSetting(SfRangeValues values) async {
     setState(() {
       soilSlider = values;
+    });
+    if (!mounted) return;
+    if (device.status != "stable") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Connection unstable. Please wait until the status above is green.",
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 600), () async {
+      setState(() => isLoading = true);
+      final deviceId = await SecureStorage.getDeviceId();
+      final serviceController = ref.read(serviceControllerProvider);
+
+      try {
+        final result = await serviceController.controlPumpSoilSettingController(
+          deviceId!,
+          values.start.toInt(),
+          values.end.toInt(),
+        );
+
+        if (!mounted) return;
+        setState(() => isLoading = false);
+
+        if (result == false) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to control with soil setting. Try again.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => isLoading = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     });
   }
 

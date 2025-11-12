@@ -114,4 +114,111 @@ class DeviceApi {
       throw 'An unknown error occurred.';
     }
   }
+
+  Future<Map<String, dynamic>> getSoilSettingApi({
+    required String devideId,
+  }) async {
+    try {
+      final authState = ref.read(authProvider).value;
+      String? accessToken;
+
+      if (authState is AuthAuthenticated) {
+        accessToken = authState.user.accessToken;
+      }
+
+      if (accessToken == null) {
+        throw 'Unauthorized: Token not found.';
+      }
+      
+      final response = await _dio.get(
+        '/device/$devideId/soil-setting',
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+
+      if (response.data['code'] == 200) {
+        final data = response.data['data'];
+        return {
+          'min_soil_setting': data['min_soil_setting'],
+          'max_soil_setting': data['max_soil_setting'],
+        };
+      }
+
+      throw 'Failed to fetch soil settings.';
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          throw 'Connection timeout. Please try again.';
+
+        case DioExceptionType.connectionError:
+          throw 'Unable to connect to the server. Please check your internet connection.';
+
+        case DioExceptionType.badResponse:
+          final message = e.response?.data['message'];
+          if (message is String && message.isNotEmpty) {
+            throw message;
+          }
+          throw 'Server responded with an error.';
+
+        default:
+          throw e.message ?? 'An unknown server error occurred.';
+      }
+    } catch (e) {
+      throw 'An unknown error occurred.';
+    }
+  }
+
+  Future<bool> controlPumpSoilSettingApi({
+    required String devideId,
+    required int minSoilSetting,
+    required int maxSoilSetting,
+  }) async {
+    try {
+      final authState = ref.read(authProvider).value;
+      String? accessToken;
+
+      if (authState is AuthAuthenticated) {
+        accessToken = authState.user.accessToken;
+      }
+
+      if (accessToken == null) {
+        throw 'Unauthorized: Token not found.';
+      }
+
+      final response = await _dio.post(
+        '/device/$devideId/control-soil',
+        data: {"soil_min": minSoilSetting, "soil_max": maxSoilSetting},
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+
+      if (response.data['code'] == 200) {
+        return true;
+      }
+
+      return false;
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          throw 'Connection timeout. Please try again.';
+
+        case DioExceptionType.connectionError:
+          throw 'Unable to connect to the server. Please check your internet connection.';
+
+        case DioExceptionType.badResponse:
+          final message = e.response?.data['message'];
+          if (message is String && message.isNotEmpty) {
+            throw message;
+          }
+          throw 'Server responded with an error.';
+
+        default:
+          throw e.message ?? 'An unknown server error occurred.';
+      }
+    } catch (e) {
+      throw 'An unknown error occurred.';
+    }
+  }
 }
