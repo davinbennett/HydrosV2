@@ -42,6 +42,14 @@ func GetLocation(deviceID string) (string, string) {
 	return device.Location, ""
 }
 
+func GetSoilSetting(deviceID string) (float64, float64, string) {
+	var device models.Device
+	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
+		return 0, 0, "Device not found."
+	}
+	return device.MinSoilSetting, device.MaxSoilSetting, ""
+}
+
 func GetCoords(deviceID string) (float64, float64, string) {
 	var device models.Device
 	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {

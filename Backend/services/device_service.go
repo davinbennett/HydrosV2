@@ -61,6 +61,10 @@ func GetLocation(deviceID string) (string, string) {
 	return repositories.GetLocation(deviceID)
 }
 
+func GetSoilSetting(deviceID string) (float64, float64, string) {
+	return repositories.GetSoilSetting(deviceID)
+}
+
 func GetWeatherStatus(deviceID string) (string, string) {
 	long, lat, err := repositories.GetCoords(deviceID)
 	if err != "" {

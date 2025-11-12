@@ -94,6 +94,21 @@ func GetPlantInfo(c *gin.Context) {
 	})
 }
 
+func GetSoilSetting(c *gin.Context) {
+	deviceID := c.Param("id")
+
+	min_soil, max_soil, err := services.GetSoilSetting(deviceID)
+	if err != "" {
+		utils.InternalServerErrorResponse(c, err)
+		return
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"min_soil_setting": min_soil,
+		"max_soil_setting": max_soil,
+	})
+}
+
 func UpdatePlantInfo(c *gin.Context) {
 	deviceID := c.Param("id")
 
@@ -135,7 +150,6 @@ func PairDevice(c *gin.Context) {
 		utils.BadRequestResponse(c, "Invalid request.")
 		return
 	}
-
 
 	deviceId, err := services.PairDevice(req.UserID, req.Code)
 	if err != "" {
