@@ -40,7 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       email: emailController.text.trim(),
       password: passwordController.text.trim(),
     );
-    
+
     if (!mounted) return;
 
     setState(() => isLoading = false);
@@ -48,12 +48,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (result is AuthAuthenticated) {
       // Set Global State
       ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
-      
+
       context.go('/home');
     } else if (result is AuthFailure) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -72,9 +75,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (result is AuthAuthenticated) {
       context.go('/home');
     } else if (result is AuthFailure) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 

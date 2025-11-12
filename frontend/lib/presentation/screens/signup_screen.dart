@@ -31,7 +31,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final confirmPasswordController = TextEditingController();
   bool isLoading = false;
 
-
   Future<void> handleSignUp() async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
@@ -40,7 +39,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
     final controller = ref.read(signupControllerProvider);
 
-    final result = await controller.signupEmail(email: emailController.text.trim());
+    final result = await controller.signupEmail(
+      email: emailController.text.trim(),
+    );
 
     if (!mounted) return;
 
@@ -59,9 +60,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         },
       );
     } else if (result is AuthFailure) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -80,9 +84,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     if (result is AuthAuthenticated) {
       context.go('/home');
     } else if (result is AuthFailure) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -308,5 +315,4 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       ),
     );
   }
-  
 }

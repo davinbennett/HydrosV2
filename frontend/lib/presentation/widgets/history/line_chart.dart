@@ -50,7 +50,7 @@ class _LineChartWidgetState extends State<LineChartWidget> {
 
   Widget _bottomTitle(double value, TitleMeta meta, double chartWidth) {
     final style = TextStyle(
-      fontWeight: FontWeight.bold,
+      fontWeight: AppFontWeight.semiBold,
       color: AppColors.success,
       fontSize: 16 * chartWidth / 500,
     );

@@ -510,18 +510,31 @@ void sendConnectionStatus(bool wifiConnected, bool mqttConnected)
 
 void reconnectMQTT()
 {
+  static bool wasMqttConnected = false;
+
+  // Kalau masih connect, gak perlu reconnect
   if (pubSubClient.connected())
+  {
+    wasMqttConnected = true;
     return;
+  }
+
+  // Kalau baru saja disconnect, langsung kirim status "unstable"
+  if (wasMqttConnected)
+  {
+    Serial.println("🚨 MQTT connection lost! Sending status: unstable");
+    sendConnectionStatus(WiFi.status() == WL_CONNECTED, false);
+    wasMqttConnected = false;
+  }
 
   unsigned long now = millis();
   if (now - lastMqttReconnectAttempt < 2000)
-  {
     return;
-  }
+
   lastMqttReconnectAttempt = now;
   Serial.print("Attempting MQTT connection... ");
 
-  // LWT setup
+  // --- Setup LWT (Last Will & Testament) ---
   String willTopic = "from-esp/" + device_id + "/status-device";
   JsonDocument willDoc;
   willDoc["type"] = 3;
@@ -531,27 +544,35 @@ void reconnectMQTT()
   String willPayload;
   serializeJson(willDoc, willPayload);
 
-  pubSubClient.setKeepAlive(30); // 30 detik
+  pubSubClient.setKeepAlive(5); // ping tiap 5s
 
-  // Set LWT via connect() parameters
-  if (pubSubClient.connect(clientId.c_str(), willTopic.c_str(), 1, true, willPayload.c_str()))
+  // --- Coba koneksi ke broker MQTT ---
+  bool connected = pubSubClient.connect(
+      clientId.c_str(),
+      willTopic.c_str(),  // LWT topic
+      1,                  // QoS
+      true,               // retained
+      willPayload.c_str() // LWT payload
+  );
+
+  if (connected)
   {
-    Serial.println("connected ✅");
-    Serial.println("MQTT connected, subscribing to topics...");
-    // Kirim status stable
-    sendConnectionStatus(true, true);
+    Serial.println("✅ MQTT connected!");
+    wasMqttConnected = true;
 
+    // Subscribe ulang semua topic
     pubSubClient.subscribe(sub_switchTopic.c_str());
     pubSubClient.subscribe(sub_soilTopic.c_str());
     pubSubClient.subscribe(sub_alarmTopic.c_str());
     pubSubClient.subscribe(sub_enabledAlarmTopic.c_str());
+
+    // Kirim status stable langsung
+    sendConnectionStatus(true, true);
   }
   else
   {
-    Serial.print("failed, rc=");
-    Serial.print(pubSubClient.state());
-    Serial.println(" → retrying...");
-    sendConnectionStatus(true, false);
+    Serial.printf("❌ MQTT connect failed (rc=%d), retrying...\n", pubSubClient.state());
+    sendConnectionStatus(WiFi.status() == WL_CONNECTED, false);
   }
 }
 
@@ -629,7 +650,7 @@ void addWiFiToList(String ssid, String pass)
 }
 
 // ======================================
-// ==== CONNECTING TO SAVED NETWORKS ====
+// ==== eECTING TO SAVED NETWORKS ====
 // ======================================
 
 bool tryConnectToSavedWiFi()
@@ -665,11 +686,38 @@ bool tryConnectToSavedWiFi()
 
       // Sinkronisasi waktu dari NTP
       configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+      lcd.clear();
+      lcd.setCursor(2, 0);
+      lcd.print("Waiting for");
+      lcd.setCursor(2, 1);
+      lcd.print("Time Sync...");
+      
       struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
+      int retry = 0;
+      const int maxRetry = 20;
+
+      while (!getLocalTime(&timeinfo) && retry < maxRetry)
       {
-        Serial.println("Gagal mendapatkan waktu dari NTP.");
-        return false;
+        retry++;
+        Serial.print(".");
+        delay(500);
+      }
+
+      if (retry >= maxRetry)
+      {
+        Serial.println("\n❌ Gagal mendapatkan waktu dari NTP setelah 10 detik.");
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Time Sync Failed!");
+        lcd.setCursor(0, 1);
+        lcd.print("Check Internet");
+      }
+      else
+      {
+        Serial.println("\n✅ Waktu berhasil disinkronkan dari NTP.");
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Time Synced!");
       }
 
       // Setel waktu ke RTC
@@ -717,7 +765,20 @@ void uiConfigureWifi()
 
 void connectWifi()
 {
-  if (WiFi.status() != WL_CONNECTED)
+  wm.process();
+
+  static bool wasConnected = false;
+  wl_status_t wifiStatus = WiFi.status();
+
+  // Jika sebelumnya connect tapi sekarang tidak → langsung kirim status disconnected
+  if (wasConnected && wifiStatus != WL_CONNECTED)
+  {
+    Serial.println("🚨 WiFi lost! Sending status: disconnected");
+    sendConnectionStatus(false, pubSubClient.connected());
+    wasConnected = false;
+  }
+
+  if (wifiStatus != WL_CONNECTED)
   {
     unsigned long now = millis();
     if (now - lastReconnectAttempt > 1000)
@@ -726,21 +787,70 @@ void connectWifi()
       countReconnect++;
 
       Serial.println("🔁 Reconnecting WiFi...");
+      lcd.setCursor(0, 0);
+      lcd.print("Reconnecting...");
+      lcd.setCursor(0, 1);
+      lcd.print("Please wait...   ");
+
       WiFi.reconnect();
+      delay(1000);
 
       if (WiFi.status() == WL_CONNECTED)
       {
-        Serial.println("✅ Reconnected");
+        Serial.println("✅ WiFi Reconnected");
+        lcd.clear();
+        lcd.print("WiFi Connected!");
         countReconnect = 0;
-      }
+        wasConnected = true;
 
+        sendConnectionStatus(true, pubSubClient.connected());
+      }
       else if (countReconnect >= MAX_RETRY)
       {
-        Serial.println("⚠️ WiFi Lost, open portal...");
-        wm.startConfigPortal("HYDROS_AP", "password");
+        Serial.println("⚠️ Max retry reached");
+        if (!tryConnectToSavedWiFi())
+        {
+          Serial.println("⚠️ No saved WiFi, opening portal...");
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Open Portal...");
+          lcd.setCursor(0, 1);
+          lcd.print("HYDROS_AP");
+
+          wm.setConfigPortalTimeout(180);
+          bool portal = wm.startConfigPortal("HYDROS_AP", "password");
+          if (portal)
+          {
+            String ssid = WiFi.SSID();
+            String pass = WiFi.psk();
+            addWiFiToList(ssid, pass);
+            wasConnected = true;
+            sendConnectionStatus(true, pubSubClient.connected());
+          }
+          else
+          {
+            Serial.println("❌ Portal timeout, restarting...");
+            lcd.clear();
+            lcd.print("Restarting...");
+            delay(2000);
+            ESP.restart();
+          }
+        }
+        else
+        {
+          Serial.printf("✅ Connected to %s\n", WiFi.SSID().c_str());
+          wasConnected = true;
+          sendConnectionStatus(true, pubSubClient.connected());
+        }
+
         countReconnect = 0;
       }
     }
+  }
+  else
+  {
+    // WiFi stabil
+    wasConnected = true;
   }
 
   sendConnectionStatus(WiFi.status() == WL_CONNECTED, pubSubClient.connected());
@@ -953,6 +1063,9 @@ void loop()
   {
     pubSubClient.loop();
   }
+
+  // Selalu update status koneksi realtime
+  sendConnectionStatus(WiFi.status() == WL_CONNECTED, pubSubClient.connected());
 
   int btn = digitalRead(button);
   mean = (soilStart + soilEnd) / 2.0;

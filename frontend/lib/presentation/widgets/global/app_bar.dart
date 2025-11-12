@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/themes/element_size.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
 import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/themes/colors.dart';
+import '../../providers/websocket/device_status_provider.dart';
+
 enum AppBarType { main, back, withoutNotif }
 
-class AppBarWidget extends StatelessWidget {
+class AppBarWidget extends ConsumerWidget {
   final AppBarType type;
   final String title;
   final VoidCallback? onBack;
@@ -22,7 +26,21 @@ class AppBarWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final device = ref.watch(deviceStatusProvider);
+
+    Color statusColor;
+    switch (device.status?.toLowerCase()) {
+      case 'stable':
+        statusColor = AppColors.success;
+        break;
+      case 'disconnected':
+        statusColor = AppColors.danger;
+        break;
+      default:
+        statusColor = AppColors.blue;
+    }
+    
     switch (type) {
       case AppBarType.main:
         return Padding(
@@ -48,12 +66,28 @@ class AppBarWidget extends StatelessWidget {
               ),
               Align(
                 alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: onNotificationTap ?? () {},
-                  child: Icon(
-                    Icons.notifications_none_outlined,
-                    size: AppElementSize.m,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 5,
+                  children: [
+                    // 🔴🟢 Status indicator
+                    Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacingSize.s),
+                    GestureDetector(
+                      onTap: onNotificationTap ?? () {},
+                      child: Icon(
+                        Icons.notifications_none_outlined,
+                        size: AppElementSize.m,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

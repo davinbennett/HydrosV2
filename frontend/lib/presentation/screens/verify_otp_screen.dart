@@ -55,7 +55,9 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint("Previous Screen: ${widget.previousScreen}\n==================\n");
+    debugPrint(
+      "Previous Screen: ${widget.previousScreen}\n==================\n",
+    );
     debugPrint("Email: ${widget.email}\n");
     startTimer();
   }
@@ -100,9 +102,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
 
     setState(() => isLoading = true);
 
-    final controllerVerifyOtp = ref.read(
-      verifyOtpControllerProvider,
-    );
+    final controllerVerifyOtp = ref.read(verifyOtpControllerProvider);
 
     final result = await controllerVerifyOtp.verifyOtp(
       email: email,
@@ -113,9 +113,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
 
     setState(() => isLoading = false);
 
-    if (username != null &&
-        password != null &&
-        previousScreen == '/signup') {
+    if (username != null && password != null && previousScreen == '/signup') {
       final registerController = ref.read(registerWithEmailControllerProvider);
       registerController.registerWithEmail(
         username: username!,
@@ -125,9 +123,12 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
       ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
       context.go('/success-signup');
     } else if (result is AuthFailure) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } else {
       // Reset password flow
       ref.read(authProvider.notifier).setAuthenticated(AsyncValue.data(result));
@@ -203,8 +204,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                             ),
                           ),
                           TextSpan(
-                            text:
-                                '${hideEmail(widget.email)}. ',
+                            text: '${hideEmail(widget.email)}. ',
                             style: TextStyle(
                               fontSize: AppFontSize.m,
                               color: AppColors.orange,

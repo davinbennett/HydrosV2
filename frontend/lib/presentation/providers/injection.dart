@@ -9,6 +9,7 @@ import 'package:frontend/domain/usecase/auth/register_with_email.dart';
 import 'package:frontend/domain/usecase/auth/reset_password.dart';
 import 'package:frontend/domain/usecase/auth/signup.dart';
 import 'package:frontend/domain/usecase/auth/verify_otp.dart';
+import 'package:frontend/domain/usecase/device/control_pump.dart';
 import 'package:frontend/domain/usecase/device/pair_device.dart';
 import 'package:frontend/infrastructure/api/auth_api.dart';
 import 'package:frontend/infrastructure/api/device_api.dart';
@@ -19,6 +20,8 @@ import 'package:frontend/presentation/controllers/pair_device_controller.dart';
 import 'package:frontend/presentation/controllers/reset_password_controller.dart';
 import 'package:frontend/presentation/controllers/signup_controller.dart';
 import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
+
+import '../controllers/service_controller.dart';
 
 // API & Firebase service
 final authApiProvider = Provider<AuthApi>((ref) {
@@ -85,8 +88,12 @@ final pairDeviceUsecaseProvider = Provider<PairDeviceUsecase>((ref) {
   final repo = ref.read(deviceRepositoryProvider);
   return PairDeviceUsecase(repo);
 });
+final controlPumpUsecaseProvider = Provider<ControlPumpUsecase>((ref) {
+  final repo = ref.read(deviceRepositoryProvider);
+  return ControlPumpUsecase(repo);
+});
 
-// Controller
+// === controller === 
 final loginControllerProvider = Provider<LoginController>((ref) {
   final usecaseLoginEmail = ref.read(loginWithEmailUsecaseProvider);
   final usecaseLoginGoogle = ref.read(loginWithGoogleUsecaseProvider);
@@ -131,4 +138,9 @@ final newPasswordControllerProvider = Provider<NewPasswordController>((ref) {
 final pairDeviceControllerProvider = Provider<PairDeviceController>((ref) {
   final usecase = ref.read(pairDeviceUsecaseProvider);
   return PairDeviceController(pairDeviceUsecase: usecase, ref: ref);
+});
+
+final serviceControllerProvider = Provider<ServiceController>((ref) {
+  final usecase = ref.read(controlPumpUsecaseProvider);
+  return ServiceController(controlPumpUsecase: usecase, ref: ref);
 });

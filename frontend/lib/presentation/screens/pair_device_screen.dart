@@ -48,7 +48,6 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
     });
   }
 
-
   Future<void> _handleManualCode(String code) async {
     setState(() => isLoading = true);
     final authState = ref.read(authProvider).value;
@@ -81,16 +80,22 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
           },
         );
       } else if (result2 is DevicePairFailure) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(result2.message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result2.message),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
       setState(() => isLoading = false);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Failed to pair device.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to pair device."),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -141,16 +146,22 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
             },
           );
         } else if (result2 is DevicePairFailure) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(result2.message)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result2.message),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       } catch (e) {
         setState(() => isLoading = false);
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Failed to pair device.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to pair device."),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     });
   }
@@ -172,7 +183,10 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
 
       if (qrText == null || qrText.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("QR code not found in image.")),
+          const SnackBar(
+            content: Text("QR code not found in image."),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         return;
       }
@@ -213,22 +227,31 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
             },
           );
         } else if (result2 is DevicePairFailure) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(result2.message)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result2.message),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       } catch (e) {
         setState(() => isLoading = false);
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Failed to pair device.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to pair device."),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Failed to read QR Code.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to read QR Code."),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -341,9 +364,8 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
                     SizedBox(height: 12),
                     TextFormFieldWidget(
                       controller: manualCodeController,
-                      validator: AppValidator.
-                      deviceCodeRequired,
-                      label: "Enter device code"
+                      validator: AppValidator.deviceCodeRequired,
+                      label: "Enter device code",
                     ),
                     SizedBox(height: 20),
                     ButtonWidget(

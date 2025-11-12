@@ -126,6 +126,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       backgroundColor: AppColors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.rl)),
@@ -144,17 +145,6 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 50,
-                      height: 4,
-                      margin: EdgeInsets.only(bottom: AppSpacingSize.m),
-                      decoration: BoxDecoration(
-                        color: AppColors.grayLight,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
                   Text(
                     'Add New Alarm',
                     style: TextStyle(
@@ -259,6 +249,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("✅ New alarm added (dummy only)"),
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                   })

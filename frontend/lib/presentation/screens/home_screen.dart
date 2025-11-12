@@ -19,7 +19,13 @@ import 'package:frontend/presentation/widgets/home/pie_chart.dart';
 import 'package:frontend/presentation/widgets/home/status_indicator.dart';
 
 import '../../core/utils/parse_to_double.dart';
+import '../../infrastructure/websocket/main_websocket.dart';
 import '../controllers/home_controller.dart';
+import '../providers/websocket/device_status_provider.dart';
+import '../providers/websocket/main_websocket_provider.dart';
+import '../providers/websocket/pump_status_provider.dart';
+import '../providers/websocket/sensor_provider.dart';
+import '../widgets/home/bottomsheet/add_plant.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -45,88 +51,6 @@ class _HomePageState extends ConsumerState<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  late final HomeController homeController;
-
-  Widget addPlantDialog(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Add Plant",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // TextField
-            const TextField(
-              decoration: InputDecoration(
-                labelText: "Plant Name",
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Slider
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Planting Duration Plan (Week)"),
-                StatefulBuilder(
-                  builder: (context, setState) {
-                    double duration = 4;
-                    return Column(
-                      children: [
-                        Slider(
-                          value: duration,
-                          min: 1,
-                          max: 52,
-                          divisions: 51,
-                          label: duration.round().toString(),
-                          onChanged: (val) {
-                            setState(() {
-                              duration = val;
-                            });
-                          },
-                        ),
-                        Text("${duration.round()} Weeks"),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Action Button
-            ElevatedButton(
-              onPressed: () {
-                // TODO: simpan data plant
-                Navigator.of(context).pop();
-              },
-              child: const Text("Save"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildUI(DevicePairState state, BuildContext context) {
     if (state is PairedNoPlant) {
@@ -150,9 +74,16 @@ class _HomePageState extends ConsumerState<HomeScreen> {
             ButtonWidget(
               text: "+ Add Plant",
               onPressed: () {
-                showDialog(
+                showModalBottomSheet(
                   context: context,
-                  builder: (_) => addPlantDialog(context),
+                  showDragHandle: true,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  builder: (context) => AddPlantBottomSheet(),
                 );
               },
             ),
@@ -168,29 +99,49 @@ class _HomePageState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    homeController = ref.read(homeControllerProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.listenManual(deviceProvider, (previous, next) {
-        final activePair = next.activePairState;
-        if (activePair != null) {
-          homeController.init();
-        }
-      });
+
+    // Jalankan async task setelah build pertama selesai
+    Future.microtask(() async {
+      await _loadLocalStates(); // 1️⃣ load data lokal dulu
+      await _initWebSocketIfPaired(); // 2️⃣ baru konek websocket
     });
   }
 
-  @override
-  void dispose() {
-    homeController.stopSensorListener();
-    super.dispose();
+  Future<void> _loadLocalStates() async {
+    try {
+      await ref.read(sensorProvider.notifier).loadFromLocal();
+      await ref.read(pumpStatusProvider.notifier).loadFromLocal();
+      await ref.read(deviceStatusProvider.notifier).loadFromLocal();
+
+      logger.i("💾 Local state loaded dari SharedPreferences");
+    } catch (e, st) {
+      logger.e("❌ Gagal load local state: $e", error: e, stackTrace: st);
+    }
   }
+
+  Future<void> _initWebSocketIfPaired() async {
+    try {
+      final deviceId = await SecureStorage.getDeviceId();
+
+      if (deviceId != null && deviceId.isNotEmpty) {
+        // Gunakan Future.microtask supaya tidak bentrok dengan initState lifecycle
+        Future.microtask(() => ref.read(websocketManagerProvider).init());
+        logger.i("🌐 WebSocket initialized for device: $deviceId");
+      } else {
+        logger.w("⚠️ Device belum terpair, WebSocket tidak dijalankan");
+      }
+    } catch (e, st) {
+      logger.e("❌ Gagal inisialisasi WebSocket: $e", error: e, stackTrace: st);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     final mq = MediaQueryHelper.of(context);
 
-    final homeController = ref.watch(homeControllerProvider);
-    final sensorData = homeController['data'] ?? {};
+    final sensor = ref.watch(sensorProvider); // WEBSOCKET
+
     final deviceState = ref.watch(deviceProvider);
 
     final pairState = deviceState.activePairState;
@@ -199,9 +150,10 @@ class _HomePageState extends ConsumerState<HomeScreen> {
 
     final location = pairState != null ? 'Jakarta, Indonesia' : '-';
     final temperatureDesc = pairState != null ? 'Cloudy' : '-';
-    final temperature = pairState != null ? parseDouble(sensorData['temperature']) : '--';
-    final humidity = parseDouble(sensorData['humidity']);
-    final soil = parseDouble(sensorData['soil']);
+    final temperature = sensor.temperature ?? 0.0;
+    final humidity = sensor.humidity ?? 0.0;
+    final soil = sensor.soil ?? 0.0;
+    
 
     if (pairState is PairedNoPlant) {
       logger.i("Pair tanpa plant: $pairState");

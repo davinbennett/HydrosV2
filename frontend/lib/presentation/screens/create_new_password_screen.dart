@@ -48,9 +48,12 @@ class _CreateNewPasswordScreenState
     setState(() => isLoading = false);
 
     if (errorMessage != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } else {
       context.go('/success-update-password');
     }

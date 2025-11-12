@@ -35,7 +35,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
     final controller = ref.read(resetPasswordControllerProvider);
 
-    final result = await controller.resetPassword(email: emailController.text.trim());
+    final result = await controller.resetPassword(
+      email: emailController.text.trim(),
+    );
 
     if (!mounted) return;
 
@@ -51,9 +53,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         },
       );
     } else if (result is AuthFailure) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 

@@ -10,10 +10,16 @@ import '../../core/themes/font_size.dart';
 import '../../core/themes/font_weight.dart';
 import '../../core/themes/radius_size.dart';
 import '../../core/themes/spacing_size.dart';
+import '../../core/utils/logger.dart';
 import '../../core/utils/media_query_helper.dart';
+import '../../infrastructure/local/secure_storage.dart';
 import '../providers/device_provider.dart';
+import '../providers/injection.dart';
+import '../providers/websocket/device_status_provider.dart';
+import '../providers/websocket/pump_status_provider.dart';
 import '../widgets/global/app_bar.dart';
 import '../widgets/global/button.dart';
+import '../widgets/global/loading.dart';
 
 class ServiceScreen extends ConsumerStatefulWidget {
   const ServiceScreen({super.key});
@@ -22,14 +28,62 @@ class ServiceScreen extends ConsumerStatefulWidget {
   ConsumerState<ConsumerStatefulWidget> createState() => _ServicePageState();
 }
 
+late DeviceStatusState device;
+
 class _ServicePageState extends ConsumerState<ServiceScreen> {
-  bool pumpSwitch = false;
   SfRangeValues soilSlider = SfRangeValues(40.0, 80.0);
+  bool isLoading = false;
+
+  // @override
+  // bool get wantKeepAlive => true;
 
   Future<void> _handleSwitchPump(bool value) async {
-    setState(() {
-      pumpSwitch = value;
-    });
+    if (!mounted) return;
+    if (device.status != "stable") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Connection unstable. Please wait until the status above is green.",
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+    final deviceId = await SecureStorage.getDeviceId();
+    final serviceController = ref.read(serviceControllerProvider);
+
+    try {
+      final result = await serviceController.controlPumpSwitchController(
+        deviceId!,
+        value,
+      );
+
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
+      if (result == 'false') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to control pump. Try again.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to control pump. Try again."),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _handleSoilSetting(SfRangeValues values) async {
@@ -40,10 +94,15 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // super.build(context);
     final mq = MediaQueryHelper.of(context);
     final deviceState = ref.watch(deviceProvider);
     final pairState = deviceState.activePairState;
     final deviceId = deviceState.pairedDeviceId;
+
+    final pump = ref.watch(pumpStatusProvider);
+    final pumpSwitch = (pump.pumpStatus ?? false) ? true : false;
+    device = ref.watch(deviceStatusProvider);
 
     if (pairState == null) {
       // Jika belum ada device yang dipair
@@ -80,379 +139,387 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
     }
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: AppSpacingSize.l,
-            right: AppSpacingSize.l,
-            top: mq.notchHeight * 1.5,
-          ),
-          child: Column(
-            children: [
-              AppBarWidget(title: 'Service', type: AppBarType.main),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: AppSpacingSize.l,
+              right: AppSpacingSize.l,
+              top: mq.notchHeight * 1.5,
+            ),
+            child: Column(
+              children: [
+                AppBarWidget(title: 'Service', type: AppBarType.main),
 
-              Row(
-                spacing: AppSpacingSize.s,
-                children: [
-                  Icon(Icons.sticky_note_2_outlined),
-                  Text(
-                    'Quick Activity',
-                    style: TextStyle(
-                      fontSize: AppFontSize.l,
-                      fontWeight: AppFontWeight.semiBold,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: AppSpacingSize.xs),
-
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(AppRadius.rm),
-                  border: Border.all(color: AppColors.borderOrange, width: 0.7),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacingSize.l),
-                  child: Column(
-                    spacing: AppSpacingSize.m,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        spacing: AppSpacingSize.s,
-                        children: [
-                          Row(
-                            spacing: AppSpacingSize.s,
-                            children: [
-                              Icon(Icons.schedule_outlined),
-                              Text(
-                                'Last Pumped',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.m,
-                                  fontWeight: AppFontWeight.medium,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Flexible(
-                            child: Text(
-                              'Jul 5’ 25 - 14:00:00',
-                              style: TextStyle(
-                                fontSize: AppFontSize.m,
-                                fontWeight: AppFontWeight.medium,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        spacing: AppSpacingSize.s,
-                        children: [
-                          Row(
-                            spacing: AppSpacingSize.s,
-                            children: [
-                              HugeIcon(
-                                icon:
-                                    HugeIcons.strokeRoundedSoilTemperatureField,
-                              ),
-                              Text(
-                                'Soil Range',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.m,
-                                  fontWeight: AppFontWeight.medium,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Flexible(
-                            child: Text(
-                              'Min: ${soilSlider.start.toInt()}% | Max: ${soilSlider.end.toInt()}%',
-                              style: TextStyle(
-                                fontSize: AppFontSize.m,
-                                fontWeight: AppFontWeight.medium,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        spacing: AppSpacingSize.s,
-                        children: [
-                          Row(
-                            spacing: AppSpacingSize.s,
-                            children: [
-                              Icon(Icons.next_plan_outlined),
-                              Text(
-                                'Next Alarm Pump',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.m,
-                                  fontWeight: AppFontWeight.medium,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Flexible(
-                            child: Text(
-                              'Jul 5’ 25 - 14:00:00',
-                              style: TextStyle(
-                                fontSize: AppFontSize.m,
-                                fontWeight: AppFontWeight.medium,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              SizedBox(height: AppSpacingSize.l),
-
-              Row(
-                spacing: AppSpacingSize.s,
-                children: [
-                  Icon(Icons.settings_remote_outlined),
-                  Text(
-                    'Device Control',
-                    style: TextStyle(
-                      fontSize: AppFontSize.l,
-                      fontWeight: AppFontWeight.semiBold,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: AppSpacingSize.xs),
-
-              IntrinsicHeight(
-                child: Row(
+                Row(
                   spacing: AppSpacingSize.s,
                   children: [
-                    Expanded(
-                      flex: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(AppRadius.rm),
-                          border: Border.all(
-                            color: AppColors.borderOrange,
-                            width: 0.7,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacingSize.l),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedWaterPump,
-                                    size: AppElementSize.xl,
-                                  ),
-                                  Transform.scale(
-                                    scale: 0.95,
-                                    child: Switch(
-                                      materialTapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      value: pumpSwitch,
-                                      onChanged:
-                                          (value) => _handleSwitchPump(value),
-                                      activeThumbColor: AppColors.orange,
-                                      padding: EdgeInsets.all(0),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: AppSpacingSize.xxxl),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                spacing: AppSpacingSize.s,
-                                children: [
-                                  Text(
-                                    'Pump',
-                                    style: TextStyle(
-                                      fontSize: AppFontSize.m,
-                                      fontWeight: AppFontWeight.semiBold,
-                                    ),
-                                  ),
-                                  Text(
-                                    pumpSwitch ? 'On' : 'Off',
-                                    style: TextStyle(
-                                      fontSize: AppFontSize.s,
-                                      color: AppColors.grayMedium
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                    Icon(Icons.sticky_note_2_outlined),
+                    Text(
+                      'Quick Activity',
+                      style: TextStyle(
+                        fontSize: AppFontSize.l,
+                        fontWeight: AppFontWeight.semiBold,
                       ),
                     ),
-                    Expanded(
-                      flex: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(AppRadius.rm),
-                          border: Border.all(
-                            color: AppColors.borderOrange,
-                            width: 0.7,
-                          ),
-                        ),
-                        child: Column(
+                  ],
+                ),
+
+                SizedBox(height: AppSpacingSize.xs),
+
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(AppRadius.rm),
+                    border: Border.all(
+                      color: AppColors.borderOrange,
+                      width: 0.7,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSpacingSize.l),
+                    child: Column(
+                      spacing: AppSpacingSize.m,
+                      children: [
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          spacing: AppSpacingSize.s,
                           children: [
-                            Padding(
-                              padding: EdgeInsets.only(
-                                top: AppSpacingSize.l, 
-                                left: AppSpacingSize.l,
-                                right: AppSpacingSize.l
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  HugeIcon(
-                                    icon:
-                                        HugeIcons
-                                            .strokeRoundedSoilMoistureField,
-                                    size: AppElementSize.xl,
+                            Row(
+                              spacing: AppSpacingSize.s,
+                              children: [
+                                Icon(Icons.schedule_outlined),
+                                Text(
+                                  'Last Pumped',
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.m,
+                                    fontWeight: AppFontWeight.medium,
                                   ),
-                                  Text(
-                                    'Soil Setting',
-                                    style: TextStyle(
-                                      fontWeight: AppFontWeight.semiBold,
-                                      fontSize: AppFontSize.m,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            SfRangeSlider(
-                              min: 0.0,
-                              max: 100.0,
-                              values: soilSlider,
-                              interval: 50,
-                              showTicks: true,
-                              showLabels: true,
-                              enableTooltip: true,
-                              onChanged:
-                                  (SfRangeValues values) =>
-                                      _handleSoilSetting(values),
-                              stepSize: 1,
-                              activeColor: AppColors.orange,
-                            ),
-                            Padding(
-                              padding:EdgeInsets.only(
-                                top: AppSpacingSize.xs, 
-                                left: AppSpacingSize.l,
-                                right: AppSpacingSize.l,
-                                bottom: AppSpacingSize.l
-                              ),
+                            Flexible(
                               child: Text(
-                                'Set soil moisture range for auto irrigation',
+                                'Jul 5’ 25 - 14:00:00',
                                 style: TextStyle(
-                                  color: AppColors.grayMedium,
-                                  fontSize: AppFontSize.s,
+                                  fontSize: AppFontSize.m,
+                                  fontWeight: AppFontWeight.medium,
+                                  fontStyle: FontStyle.italic,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: AppSpacingSize.l),
-
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(AppRadius.rm),
-                  border: Border.all(color: AppColors.borderOrange, width: 0.7),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacingSize.l),
-                  child: Column(
-                    spacing: AppSpacingSize.s,
-                    children: [
-                      Text(
-                        'Alarm in 2 days 17 hours 32 minutes',
-                        style: TextStyle(
-                          fontSize: AppFontSize.m,
-                          fontWeight: AppFontWeight.semiBold,
-                        ),
-                      ),
-                      Divider(color: AppColors.grayDivider),
-                  
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          context.push('/alarm');
-                        },
-                        child: Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          spacing: AppSpacingSize.s,
                           children: [
                             Row(
                               spacing: AppSpacingSize.s,
                               children: [
                                 HugeIcon(
-                                  icon: HugeIcons.strokeRoundedAlarmClock,
-                                  size: AppElementSize.xl,
+                                  icon:
+                                      HugeIcons
+                                          .strokeRoundedSoilTemperatureField,
                                 ),
+                                Text(
+                                  'Soil Range',
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.m,
+                                    fontWeight: AppFontWeight.medium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Flexible(
+                              child: Text(
+                                'Min: ${soilSlider.start.toInt()}% | Max: ${soilSlider.end.toInt()}%',
+                                style: TextStyle(
+                                  fontSize: AppFontSize.m,
+                                  fontWeight: AppFontWeight.medium,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          spacing: AppSpacingSize.s,
+                          children: [
+                            Row(
+                              spacing: AppSpacingSize.s,
+                              children: [
+                                Icon(Icons.next_plan_outlined),
+                                Text(
+                                  'Next Alarm Pump',
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.m,
+                                    fontWeight: AppFontWeight.medium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Flexible(
+                              child: Text(
+                                'Jul 5’ 25 - 14:00:00',
+                                style: TextStyle(
+                                  fontSize: AppFontSize.m,
+                                  fontWeight: AppFontWeight.medium,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: AppSpacingSize.l),
+
+                Row(
+                  spacing: AppSpacingSize.s,
+                  children: [
+                    Icon(Icons.settings_remote_outlined),
+                    Text(
+                      'Device Control',
+                      style: TextStyle(
+                        fontSize: AppFontSize.l,
+                        fontWeight: AppFontWeight.semiBold,
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: AppSpacingSize.xs),
+
+                IntrinsicHeight(
+                  child: Row(
+                    spacing: AppSpacingSize.s,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(AppRadius.rm),
+                            border: Border.all(
+                              color: AppColors.borderOrange,
+                              width: 0.7,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(AppSpacingSize.l),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    HugeIcon(
+                                      icon: HugeIcons.strokeRoundedWaterPump,
+                                      size: AppElementSize.xl,
+                                    ),
+                                    Transform.scale(
+                                      scale: 0.95,
+                                      child: Switch(
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        value: pumpSwitch,
+                                        onChanged:
+                                            (value) => _handleSwitchPump(value),
+                                        activeThumbColor: AppColors.orange,
+                                        padding: EdgeInsets.all(0),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: AppSpacingSize.xxxl),
                                 Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  spacing: AppSpacingSize.s,
                                   children: [
                                     Text(
-                                      'Alarm',
+                                      'Pump',
                                       style: TextStyle(
                                         fontSize: AppFontSize.m,
                                         fontWeight: AppFontWeight.semiBold,
                                       ),
                                     ),
                                     Text(
-                                      'Schedule pump with alarm',
+                                      pumpSwitch ? 'On' : 'Off',
                                       style: TextStyle(
-                                        color: AppColors.grayMedium,
                                         fontSize: AppFontSize.s,
+                                        color: AppColors.grayMedium,
                                       ),
                                     ),
                                   ],
-                                )
+                                ),
                               ],
                             ),
-                            Transform.translate(
-                              offset: Offset(
-                                8.0,
-                                0.0,
-                              ),
-                              child: Icon(
-                                Icons.keyboard_arrow_right_rounded,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      )
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(AppRadius.rm),
+                            border: Border.all(
+                              color: AppColors.borderOrange,
+                              width: 0.7,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: AppSpacingSize.l,
+                                  left: AppSpacingSize.l,
+                                  right: AppSpacingSize.l,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    HugeIcon(
+                                      icon:
+                                          HugeIcons
+                                              .strokeRoundedSoilMoistureField,
+                                      size: AppElementSize.xl,
+                                    ),
+                                    Text(
+                                      'Soil Setting',
+                                      style: TextStyle(
+                                        fontWeight: AppFontWeight.semiBold,
+                                        fontSize: AppFontSize.m,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SfRangeSlider(
+                                min: 0.0,
+                                max: 100.0,
+                                values: soilSlider,
+                                interval: 50,
+                                showTicks: true,
+                                showLabels: true,
+                                enableTooltip: true,
+                                onChanged:
+                                    (SfRangeValues values) =>
+                                        _handleSoilSetting(values),
+                                stepSize: 1,
+                                activeColor: AppColors.orange,
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: AppSpacingSize.xs,
+                                  left: AppSpacingSize.l,
+                                  right: AppSpacingSize.l,
+                                  bottom: AppSpacingSize.l,
+                                ),
+                                child: Text(
+                                  'Set soil moisture range for auto irrigation',
+                                  style: TextStyle(
+                                    color: AppColors.grayMedium,
+                                    fontSize: AppFontSize.s,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              )
-            ],
+
+                SizedBox(height: AppSpacingSize.l),
+
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(AppRadius.rm),
+                    border: Border.all(
+                      color: AppColors.borderOrange,
+                      width: 0.7,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSpacingSize.l),
+                    child: Column(
+                      spacing: AppSpacingSize.s,
+                      children: [
+                        Text(
+                          'Alarm in 2 days 17 hours 32 minutes',
+                          style: TextStyle(
+                            fontSize: AppFontSize.m,
+                            fontWeight: AppFontWeight.semiBold,
+                          ),
+                        ),
+                        Divider(color: AppColors.grayDivider),
+
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            context.push('/alarm');
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                spacing: AppSpacingSize.s,
+                                children: [
+                                  HugeIcon(
+                                    icon: HugeIcons.strokeRoundedAlarmClock,
+                                    size: AppElementSize.xl,
+                                  ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Alarm',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.m,
+                                          fontWeight: AppFontWeight.semiBold,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Schedule pump with alarm',
+                                        style: TextStyle(
+                                          color: AppColors.grayMedium,
+                                          fontSize: AppFontSize.s,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Transform.translate(
+                                offset: Offset(8.0, 0.0),
+                                child: Icon(Icons.keyboard_arrow_right_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          if (isLoading) LoadingWidget(),
+        ],
       ),
     );
   }

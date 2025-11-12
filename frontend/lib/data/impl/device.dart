@@ -10,4 +10,9 @@ class DeviceImpl implements DeviceRepository {
     return api.pairDeviceApi(code: code, userId: userId);
   }
 
+  Future<bool> controlPumpSwitchImpl(String devideId, bool switchValue) {
+    return api.controlPumpSwitchApi(devideId: devideId, switchValue: switchValue,
+    );
+  }
+
 }

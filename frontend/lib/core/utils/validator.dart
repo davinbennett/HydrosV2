@@ -6,6 +6,20 @@ class AppValidator {
     return null;
   }
 
+  static String? plantNameRequired(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Plant name is required';
+    }
+    return null;
+  }
+
+  static String? locationRequired(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Location is required';
+    }
+    return null;
+  }
+
   static String? deviceCodeRequired(String? value) {
     if (value == null || value.trim().isEmpty) {
       return "Device code is required";

@@ -148,6 +148,69 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
         'moistureBefore': 37,
         'moistureAfter': 52,
       },
+      {
+        'user': 'System (Auto)',
+        'date': '01 Nov 2025',
+        'start': '15:10',
+        'end': '15:13',
+        'duration': '3m',
+        'moistureBefore': 37,
+        'moistureAfter': 52,
+      },
+      {
+        'user': 'System (Auto)',
+        'date': '01 Nov 2025',
+        'start': '15:10',
+        'end': '15:13',
+        'duration': '3m',
+        'moistureBefore': 37,
+        'moistureAfter': 52,
+      },
+      {
+        'user': 'System (Auto)',
+        'date': '01 Nov 2025',
+        'start': '15:10',
+        'end': '15:13',
+        'duration': '3m',
+        'moistureBefore': 37,
+        'moistureAfter': 52,
+      },
+      {
+        'user': 'System (Auto)',
+        'date': '01 Nov 2025',
+        'start': '15:10',
+        'end': '15:13',
+        'duration': '3m',
+        'moistureBefore': 37,
+        'moistureAfter': 52,
+      },
+      {
+        'user': 'System (Auto)',
+        'date': '01 Nov 2025',
+        'start': '15:10',
+        'end': '15:13',
+        'duration': '3m',
+        'moistureBefore': 37,
+        'moistureAfter': 52,
+      },
+      {
+        'user': 'System (Auto)',
+        'date': '01 Nov 2025',
+        'start': '15:10',
+        'end': '15:13',
+        'duration': '3m',
+        'moistureBefore': 37,
+        'moistureAfter': 52,
+      },
+      {
+        'user': 'System (Auto)',
+        'date': '01 Nov 2025',
+        'start': '15:10',
+        'end': '15:13',
+        'duration': '3m',
+        'moistureBefore': 37,
+        'moistureAfter': 52,
+      },
     ];
     final shortList = pumpLogs.take(5).toList();
 
@@ -503,7 +566,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                 child: Row(
                   spacing: AppSpacingSize.s,
                   children: [
-                    Icon(Icons.sticky_note_2_outlined),
+                    HugeIcon(icon: HugeIcons.strokeRoundedActivity01),
                     Text(
                       'Water Flow Activity',
                       style: TextStyle(
@@ -583,84 +646,93 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
               SizedBox(height: AppSpacingSize.l),
 
               Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacingSize.l),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// Header row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Details',
-                style: TextStyle(
-                  fontWeight: AppFontWeight.medium,
-                  fontSize: AppFontSize.m,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    showDragHandle: true,
-                    isScrollControlled: true,
-                    backgroundColor: AppColors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(AppRadius.rxl),
-                      ),
-                    ),
-                    builder: (context) => FractionallySizedBox(
-                      heightFactor: 0.85,
-                      child: Padding(
-                        padding: EdgeInsets.all(AppSpacingSize.l),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'All Pump History',
-                              style: TextStyle(
-                                fontSize: AppFontSize.l,
-                                fontWeight: AppFontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: pumpLogs.length,
-                                itemBuilder: (context, index) =>
-                                    _PumpHistoryItem(pumpLogs[index]),
-                              ),
-                            ),
-                          ],
+                padding: EdgeInsets.symmetric(horizontal: AppSpacingSize.l),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// Header row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Details',
+                          style: TextStyle(
+                            fontWeight: AppFontWeight.medium,
+                            fontSize: AppFontSize.m,
+                          ),
                         ),
-                      ),
+                        GestureDetector(
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              showDragHandle: true,
+                              isScrollControlled: true,
+                              backgroundColor: AppColors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(AppRadius.rxl),
+                                ),
+                              ),
+                              builder:
+                                  (context) => FractionallySizedBox(
+                                    heightFactor: 0.85,
+                                    child: Padding(
+                                      padding: EdgeInsetsGeometry.symmetric(horizontal: AppSpacingSize.l),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'All Pump History',
+                                            style: TextStyle(
+                                              fontSize: AppFontSize.l,
+                                              fontWeight: AppFontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 12),
+                                          Expanded(
+                                            child: ListView.builder(
+                                              itemCount: pumpLogs.length,
+                                              itemBuilder:
+                                                  (context, index) =>
+                                                      _PumpHistoryItem(
+                                                        pumpLogs[index],
+                                                      ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                            );
+                          },
+                          child: Text(
+                            'See all',
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontWeight: AppFontWeight.medium,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                },
-                child: Text(
-                  'See all',
-                  style: TextStyle(
-                    color: AppColors.success,
-                    fontWeight: AppFontWeight.medium,
-                  ),
+
+                    SizedBox(height: AppSpacingSize.xs),
+
+                    /// List preview
+                    ListView.builder(
+                      padding: EdgeInsets.zero,
+                      itemCount: shortList.length,
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemBuilder:
+                          (context, index) =>
+                              _PumpHistoryItem(shortList[index]),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          /// List preview
-          ListView.builder(
-            itemCount: shortList.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) => _PumpHistoryItem(shortList[index]),
-          ),
-        ],
-      ),
-    ),
             ],
           ),
         ),
@@ -679,8 +751,9 @@ class _PumpHistoryItem extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSpacingSize.s),
       padding: EdgeInsets.all(AppSpacingSize.m),
       decoration: BoxDecoration(
-        color: AppColors.grayLight,
-        borderRadius: BorderRadius.circular(AppRadius.rl),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppRadius.rm),
+        border: Border.all(color: AppColors.borderOrange, width: 0.7),
       ),
       child: Row(
         children: [
@@ -694,33 +767,71 @@ class _PumpHistoryItem extends StatelessWidget {
             child: Icon(
               Icons.heat_pump,
               color: AppColors.success,
-              size: 22,
+              size: AppElementSize.l,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: AppSpacingSize.m),
           Expanded(
             child: Column(
+              spacing: 3,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  data['user'],
-                  style: TextStyle(
-                    fontWeight: AppFontWeight.semiBold,
-                    fontSize: AppFontSize.s,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      data['user'],
+                      style: TextStyle(
+                        fontWeight: AppFontWeight.semiBold,
+                        fontSize: AppFontSize.s,
+                      ),
+                    ),
+                    Text(
+                      '${data['date']}',
+                      style: TextStyle(
+                        fontSize: AppFontSize.s,
+                        color: AppColors.grayMedium,
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
-                  '${data['date']} — ${data['start']}–${data['end']} (${data['duration']})',
+                  '${data['start']}–${data['end']} (${data['duration']})',
                   style: TextStyle(
                     fontSize: AppFontSize.s,
                     color: AppColors.grayMedium,
                   ),
                 ),
-                Text(
-                  'Soil Moisture: ${data['moistureBefore']}% → ${data['moistureAfter']}%',
-                  style: TextStyle(
-                    fontSize: AppFontSize.s,
-                    color: AppColors.black,
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: AppFontSize.s,
+                      color: AppColors.black,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Soil Moisture: ',
+                        style: TextStyle(fontSize: AppFontSize.s),
+                      ),
+                      TextSpan(
+                        text: '${data['moistureBefore']}%',
+                        style: TextStyle(
+                          color: AppColors.danger,
+                          fontSize: AppFontSize.s,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' → ',
+                        style: TextStyle(fontSize: AppFontSize.s),
+                      ),
+                      TextSpan(
+                        text: '${data['moistureAfter']}%',
+                        style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: AppFontSize.s,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

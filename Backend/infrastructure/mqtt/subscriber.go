@@ -73,9 +73,11 @@ func handleDeviceStatus(client mqtt.Client, msg mqtt.Message) string {
 	SetDeviceStatus(data.DeviceID, DeviceStatus(data.Status))
 	
 	wsPayload := map[string]any{
-		"type":      data.Type,
+		"type":      "device_status",
 		"device_id": data.DeviceID,
-		"status":    data.Status,
+		"data": map[string]any{
+			"status":    data.Status,
+		},
 	}
 
 	jsonMsg, err := json.Marshal(wsPayload)
@@ -201,7 +203,7 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 
 	// ! SEND TO WS
 	wsPayload := map[string]any{
-		"type":      data.Type,
+		"type":      "pump_status",
 		"device_id": data.DeviceID,
 		"data": map[string]any{
 			"pump_status": data.PumpStatus,
@@ -216,7 +218,7 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 	}
 
 	log.Printf("WS > pump status > jsonMsg:%s\n", jsonMsg)
-	// config.Broadcast <- jsonMsg
+	config.Broadcast <- jsonMsg
 	return ""
 }
 
