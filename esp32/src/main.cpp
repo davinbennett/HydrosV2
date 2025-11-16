@@ -239,6 +239,7 @@ void publishDeleteAlarm(const String &id)
 {
   JsonDocument doc;
 
+  doc["device_id"] = device_id;
   doc["alarm_id"] = id;
 
   char payload[256];

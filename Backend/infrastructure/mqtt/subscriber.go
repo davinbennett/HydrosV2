@@ -224,6 +224,7 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 
 func handleDeleteAlarm(client mqtt.Client, msg mqtt.Message) string {
 	var data struct {
+		DeviceID   string  `json:"device_id"`
 		AlarmID string `json:"alarm_id"`
 	}
 
@@ -238,6 +239,25 @@ func handleDeleteAlarm(client mqtt.Client, msg mqtt.Message) string {
 	if err != "" {
 		return err
 	}
+
+	// ! SEND TO WS
+	wsPayload := map[string]any{
+		"type":      "update_enabled",
+		"device_id": data.DeviceID,
+		"data": map[string]any{
+			"alarm_id":   data.AlarmID,
+			"is_enabled":   false,
+		},
+	}
+
+	jsonMsg, err3 := json.Marshal(wsPayload)
+	if err3 != nil {
+		return "Failed to enabled for broadcast."
+	}
+
+	log.Printf("WS > is enable > jsonMsg:%s\n", jsonMsg)
+	config.Broadcast <- jsonMsg
+
 
 	return ""
 }

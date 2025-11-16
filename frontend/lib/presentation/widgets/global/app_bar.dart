@@ -34,11 +34,9 @@ class AppBarWidget extends ConsumerWidget {
       case 'stable':
         statusColor = AppColors.success;
         break;
-      case 'disconnected':
+      default:
         statusColor = AppColors.danger;
         break;
-      default:
-        statusColor = AppColors.blue;
     }
     
     switch (type) {
@@ -72,11 +70,21 @@ class AppBarWidget extends ConsumerWidget {
                   children: [
                     // 🔴🟢 Status indicator
                     Container(
-                      width: 14,
-                      height: 14,
+                      width: 17,
+                      height: 17,
                       decoration: BoxDecoration(
                         color: statusColor,
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(
+                              0.15,
+                            ), 
+                            spreadRadius: 1,
+                            blurRadius: 2,
+                            offset: Offset(0, 0.5)
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(width: AppSpacingSize.s),

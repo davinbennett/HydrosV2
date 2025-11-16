@@ -6,6 +6,7 @@ import 'package:frontend/core/themes/colors.dart';
 import 'package:frontend/core/themes/element_size.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 
 import '../../core/themes/font_size.dart';
@@ -15,10 +16,12 @@ import '../../core/themes/spacing_size.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/media_query_helper.dart';
 import '../../infrastructure/local/secure_storage.dart';
+import '../providers/alarm_provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/injection.dart';
 import '../providers/websocket/device_status_provider.dart';
 import '../providers/websocket/pump_status_provider.dart';
+import '../states/alarm_state.dart';
 import '../widgets/global/app_bar.dart';
 import '../widgets/global/button.dart';
 import '../widgets/global/loading.dart';
@@ -31,35 +34,142 @@ class ServiceScreen extends ConsumerStatefulWidget {
 }
 
 late DeviceStatusState device;
+bool isRefreshingAlarm = false;
 
 class _ServicePageState extends ConsumerState<ServiceScreen> {
   SfRangeValues soilSlider = SfRangeValues(0.0, 0.0);
+  SfRangeValues previousSoilSlider = const SfRangeValues(0.0, 0.0);
+
+  bool isErrorShown = false;
+  Timer? errorTimer;
+
   bool isLoading = false;
   Timer? _debounceTimer;
+
+  List<Map<String, dynamic>> listAlarm = [];
+
+  String countdownText = '-';
+  Timer? countdownTimer;
+  DateTime? nextAlarmTime;
+  String nextAlarmPump = '-';
+  String nextAlarmStr = '';
+  
 
   @override
   void initState() {
     super.initState();
 
-    Future.microtask(() async {
-      await _loadSoilSetting();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final deviceId = await SecureStorage.getDeviceId();
+      if (deviceId != null && deviceId.isNotEmpty) {
+        await _loadSoilSetting(deviceId);
+        await ref.read(alarmProvider.notifier).loadAlarm(deviceId);
+      } else {
+        logger.w("⚠️ Device belum terpair, skip load soil setting");
+      }
     });
   }
 
+  void _startCountdownTimer() {
+    countdownTimer?.cancel();
+
+    if (nextAlarmTime == null) {
+      setState(() => countdownText = '-');
+      return;
+    }
+
+    _updateCountdownText();
+
+    countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (nextAlarmTime == null) {
+        setState(() => countdownText = "-");
+        return; 
+      }
+
+      final now = DateTime.now();
+      final diff = nextAlarmTime!.difference(now);
+
+      if (diff.isNegative && !isRefreshingAlarm) {
+        timer.cancel();
+        isRefreshingAlarm = true;
+
+        Future.delayed(const Duration(milliseconds: 300), () async {
+          final deviceId = await SecureStorage.getDeviceId();
+          if (mounted && deviceId != null) {
+            // refresh lewat provider
+            await ref.read(alarmProvider.notifier).loadAlarm(deviceId);
+          }
+          isRefreshingAlarm = false;
+        });
+        return;
+      }
+
+      final days = diff.inDays;
+      final hours = diff.inHours % 24;
+      final minutes = diff.inMinutes % 60;
+      final seconds = diff.inSeconds % 60;
+
+      setState(() {
+        if (days > 0) {
+          countdownText =
+              'Alarm in $days day${days > 1 ? "s" : ""} $hours hr $minutes min';
+        } else if (hours > 0) {
+          countdownText = 'Alarm in $hours hr $minutes min $seconds sec';
+        } else if (minutes > 0) {
+          countdownText = 'Alarm in $minutes min $seconds sec';
+        } else {
+          countdownText = 'Alarm in $seconds sec';
+        }
+      });
+    });
+  }
+
+  void _updateCountdownText() {
+    if (nextAlarmTime == null) {
+      setState(() => countdownText = '-');
+      return;
+    }
+
+    final now = DateTime.now();
+    final diff = nextAlarmTime!.toLocal().difference(now);
+
+    if (diff.isNegative) {
+      setState(() => countdownText = 'No Upcoming Alarm');
+      return;
+    }
+
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+    final minutes = diff.inMinutes % 60;
+    final seconds = diff.inSeconds % 60;
+
+    setState(() {
+      if (days > 0) {
+        countdownText =
+            'Alarm in $days day${days > 1 ? "s" : ""} $hours hr $minutes min';
+      } else if (hours > 0) {
+        countdownText = 'Alarm in $hours hr $minutes min $seconds sec';
+      } else if (minutes > 0) {
+        countdownText = 'Alarm in $minutes min $seconds sec';
+      } else {
+        countdownText = 'Alarm in $seconds sec';
+      }
+    });
+  }
+
+  // --- dispose: pastikan timer dibersihkan
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    countdownTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadSoilSetting() async {
-    final deviceId = await SecureStorage.getDeviceId();
+  Future<void> _loadSoilSetting(String deviceId) async {
     final serviceController = ref.read(serviceControllerProvider);
 
     try {
-      final result = await serviceController.getSoilSettingController(
-        deviceId!,
-      );
+      final result = await serviceController.getSoilSettingController(deviceId);
 
       if (!mounted) return;
 
@@ -69,6 +179,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
 
         setState(() {
           soilSlider = SfRangeValues(min, max);
+          previousSoilSlider = SfRangeValues(min, max);
         });
       }
     } catch (e) {
@@ -133,21 +244,43 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
   }
 
   Future<void> _handleSoilSetting(SfRangeValues values) async {
-    setState(() {
-      soilSlider = values;
-    });
     if (!mounted) return;
+
+    // ==== CEK KONEKSI ====
     if (device.status != "stable") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Connection unstable. Please wait until the status above is green.",
+      // --- Hindari snackbar spam ---
+      if (!isErrorShown) {
+        isErrorShown = true;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Connection unstable. Please wait until the status above is green.",
+            ),
+            behavior: SnackBarBehavior.floating,
           ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+
+        // Reset flag setelah 1.5 detik
+        errorTimer?.cancel();
+        errorTimer = Timer(const Duration(milliseconds: 1500), () {
+          isErrorShown = false;
+        });
+      }
+
+      // --- Kembalikan slider ke nilai sebelumnya ---
+      setState(() {
+        soilSlider = previousSoilSlider;
+      });
+
       return;
     }
+
+    // ==== KONEKSI STABLE ====
+    setState(() {
+      soilSlider = values;
+      previousSoilSlider = values; // simpan nilai terakhir
+    });
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 600), () async {
@@ -165,18 +298,27 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
         if (!mounted) return;
         setState(() => isLoading = false);
 
-        if (result == false) {
+        // Jika gagal → revert slider
+        if (!result) {
+          setState(() {
+            soilSlider = previousSoilSlider;
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Failed to control with soil setting. Try again.'),
               behavior: SnackBarBehavior.floating,
             ),
           );
         }
-        
       } catch (e) {
         if (!mounted) return;
         setState(() => isLoading = false);
+
+        // revert slider setelah error
+        setState(() {
+          soilSlider = previousSoilSlider;
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -194,11 +336,43 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
     final mq = MediaQueryHelper.of(context);
     final deviceState = ref.watch(deviceProvider);
     final pairState = deviceState.activePairState;
+    final alarmState = ref.watch(alarmProvider);
     final deviceId = deviceState.pairedDeviceId;
 
     final pump = ref.watch(pumpStatusProvider);
     final pumpSwitch = (pump.pumpStatus ?? false) ? true : false;
     device = ref.watch(deviceStatusProvider);
+
+    ref.listen<AlarmState>(alarmProvider, (prev, next) {
+      if (next.nextAlarmStr.isEmpty) {
+        setState(() {
+          nextAlarmTime = null;
+          nextAlarmPump = '-';
+          countdownText = '-';
+        });
+        return;
+      }
+
+      final parsed = DateTime.tryParse(next.nextAlarmStr);
+      if (parsed == null) return;
+
+      // setting nextAlarmTime di state
+      setState(() {
+        nextAlarmTime = parsed.toLocal();
+
+        final now = DateTime.now();
+        if (nextAlarmTime!.isBefore(now)) {
+          nextAlarmTime = nextAlarmTime!.add(const Duration(days: 1));
+        }
+
+        nextAlarmPump = DateFormat(
+          "MMM d’ yy 'at' HH:mm:ss",
+        ).format(nextAlarmTime!);
+      });
+
+      // restart timer
+      _startCountdownTimer();
+    });
 
     if (pairState == null) {
       // Jika belum ada device yang dipair
@@ -346,7 +520,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                             Row(
                               spacing: AppSpacingSize.s,
                               children: [
-                                Icon(Icons.next_plan_outlined),
+                                const Icon(Icons.next_plan_outlined),
                                 Text(
                                   'Next Alarm Pump',
                                   style: TextStyle(
@@ -358,7 +532,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                             ),
                             Flexible(
                               child: Text(
-                                'Jul 5’ 25 - 14:00:00',
+                                nextAlarmPump,
                                 style: TextStyle(
                                   fontSize: AppFontSize.m,
                                   fontWeight: AppFontWeight.medium,
@@ -554,7 +728,8 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                       spacing: AppSpacingSize.s,
                       children: [
                         Text(
-                          'Alarm in 2 days 17 hours 32 minutes',
+                          countdownText,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: AppFontSize.m,
                             fontWeight: AppFontWeight.semiBold,

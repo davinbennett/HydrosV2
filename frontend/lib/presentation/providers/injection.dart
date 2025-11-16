@@ -21,6 +21,11 @@ import 'package:frontend/presentation/controllers/reset_password_controller.dart
 import 'package:frontend/presentation/controllers/signup_controller.dart';
 import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 
+import '../../data/impl/alarm.dart';
+import '../../domain/repositories/alarm.dart';
+import '../../domain/usecase/alarm.dart';
+import '../../infrastructure/api/alarm_api.dart';
+import '../controllers/alarm_controller.dart';
 import '../controllers/service_controller.dart';
 
 // API & Firebase service
@@ -29,6 +34,9 @@ final authApiProvider = Provider<AuthApi>((ref) {
 });
 final deviceApiProvider = Provider<DeviceApi>((ref) {
   return DeviceApi(ref);
+});
+final alarmApiProvider = Provider<AlarmApi>((ref) {
+  return AlarmApi(ref);
 });
 
 final firebaseServiceProvider = Provider<GoogleSigninAuthService>((ref) {
@@ -44,6 +52,10 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final deviceRepositoryProvider = Provider<DeviceRepository>((ref) {
   final api = ref.read(deviceApiProvider);
   return DeviceImpl(api: api);
+});
+final alarmRepositoryProvider = Provider<AlarmRepository>((ref) {
+  final api = ref.read(alarmApiProvider);
+  return AlarmImpl(api: api);
 });
 
 // UseCase
@@ -92,8 +104,12 @@ final controlPumpUsecaseProvider = Provider<ControlPumpUsecase>((ref) {
   final repo = ref.read(deviceRepositoryProvider);
   return ControlPumpUsecase(repo);
 });
+final alarmUsecaseProvider = Provider<AlarmUsecase>((ref) {
+  final repo = ref.read(alarmRepositoryProvider);
+  return AlarmUsecase(repo);
+});
 
-// === controller === 
+// === controller ===
 final loginControllerProvider = Provider<LoginController>((ref) {
   final usecaseLoginEmail = ref.read(loginWithEmailUsecaseProvider);
   final usecaseLoginGoogle = ref.read(loginWithGoogleUsecaseProvider);
@@ -142,5 +158,18 @@ final pairDeviceControllerProvider = Provider<PairDeviceController>((ref) {
 
 final serviceControllerProvider = Provider<ServiceController>((ref) {
   final usecase = ref.read(controlPumpUsecaseProvider);
-  return ServiceController(controlPumpUsecase: usecase, ref: ref);
+  final alarmUsecase = ref.read(alarmUsecaseProvider);
+  return ServiceController(
+    alarmUsecase: alarmUsecase,
+    controlPumpUsecase: usecase,
+    ref: ref,
+  );
+});
+
+final alarmControllerProvider = Provider<AlarmController>((ref) {
+  final alarmUsecase = ref.read(alarmUsecaseProvider);
+  return AlarmController(
+    alarmUsecase: alarmUsecase,
+    ref: ref,
+  );
 });

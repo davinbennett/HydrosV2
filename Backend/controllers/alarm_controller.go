@@ -41,12 +41,16 @@ func AddAlarm(c *gin.Context) {
 		return
 	}
 
-	if err := services.AddAlarm(req.DeviceID, scheduleTime, req.DurationOn, req.RepeatType); err != "" {
-		utils.InternalServerErrorResponse(c, err)
+	alarmId, err2 := services.AddAlarm(req.DeviceID, scheduleTime, req.DurationOn, req.RepeatType)
+	if err2 != "" {
+		utils.InternalServerErrorResponse(c, err2)
 		return
 	}
 
-	utils.SuccessResponse(c, "Alarm added successfully.")
+
+	utils.SuccessResponse(c, gin.H{
+		"alarm_id": alarmId,
+	})
 }
 
 func UpdateAlarm(c *gin.Context) {

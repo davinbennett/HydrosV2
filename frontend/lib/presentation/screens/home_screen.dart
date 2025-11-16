@@ -146,7 +146,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
 
     final pairState = deviceState.activePairState;
 
-    // _logSecureStorage();
+    _logSecureStorage();
 
     final location = pairState != null ? 'Jakarta, Indonesia' : '-';
     final temperatureDesc = pairState != null ? 'Cloudy' : '-';

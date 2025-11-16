@@ -22,6 +22,9 @@ func GetDeviceAlarms(deviceID string) (map[string]any, string) {
 		list = append(list, map[string]any{
 			"id":            alarm.ID,
 			"schedule_time": alarm.ScheduleTime.Format(time.RFC3339),
+			"is_enabled":    alarm.IsEnabled,
+			"duration_on":   alarm.DurationOn,
+			"repeat_type":   alarm.RepeatType,
 		})
 
 		if nextAlarm == nil || alarm.ScheduleTime.Before(*nextAlarm) {
@@ -40,18 +43,18 @@ func GetDeviceAlarms(deviceID string) (map[string]any, string) {
 	}, ""
 }
 
-func AddAlarm(deviceID string, scheduleTime time.Time, durationOn, repeatType int) string {
+func AddAlarm(deviceID string, scheduleTime time.Time, durationOn, repeatType int) (uint, string) {
 	// 0. Cek status koneksi device
 	status := mqtt.GetDeviceStatus(deviceID)
 	if status != mqtt.StatusStable {
 		log.Printf("[SERVICE] Device %s not connected (status: %s)", deviceID, status)
-		return "Failed to add alarm. Please try again"
+		return 0, "Failed to add alarm. Please try again"
 	}
 
 	// 1. Simpan alarm ke DB
 	alarmID, err := repositories.CreateAlarm(deviceID, scheduleTime, durationOn, repeatType)
 	if err != "" {
-		return err
+		return 0, err
 	}
 
 	// 2. Payload untuk dikirim ke device
@@ -66,17 +69,17 @@ func AddAlarm(deviceID string, scheduleTime time.Time, durationOn, repeatType in
 	data, err2 := json.Marshal(payload)
 	if err2 != nil {
 		log.Printf("[SERVICE] Failed to marshal alarm payload: %v", err2)
-		return "Failed to prepare alarm payload"
+		return 0, "Failed to prepare alarm payload"
 	}
 
 	// 3. Publish ke device via MQTT
 	res := mqtt.PublishAlarmControl(config.MQTTClients, deviceID, string(data))
 	if res != "" {
-		return res
+		return 0, res
 	}
 
 	log.Printf("[SERVICE] Alarm added & published to device %s: %s", deviceID, string(data))
-	return ""
+	return alarmID, ""
 }
 
 func UpdateAlarm(deviceID, alarmID string, scheduleTime time.Time, durationOn, repeatType int) string {

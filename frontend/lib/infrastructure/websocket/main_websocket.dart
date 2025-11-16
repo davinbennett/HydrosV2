@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../local/secure_storage.dart';
+import 'enable_alarm.dart';
 import 'pump_status.dart';
 import 'device_status.dart';
 import '../../core/utils/logger.dart';
@@ -75,6 +76,9 @@ void _listen(Ref ref) {
             break;
           case 'device_status':
             handleDeviceStatus(ref, json);
+            break;
+          case 'update_enabled': // 🔥 TAMBAHAN DI SINI
+            handleUpdateEnabled(ref, json);
             break;
           default:
             logger.w("[WS] Unknown type: $type");
