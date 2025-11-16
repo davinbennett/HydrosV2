@@ -11,7 +11,7 @@ type Alarm struct {
 	IsEnabled    bool       `gorm:"default:true"`
 	DurationOn   int        `gorm:"default:5"` // in minutes
 
-	RepeatType int `gorm:"type:int;default:1"` // 1=once,2=daily,3=weekly,4=custom
+	RepeatType int `gorm:"type:int;default:1"` // 1=once,2=daily,3=weekly
 
 	CreatedAt time.Time `gorm:"default:now()"`
 	UpdatedAt time.Time `gorm:"default:now()"`

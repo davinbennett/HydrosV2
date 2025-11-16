@@ -6,6 +6,7 @@ import 'package:frontend/presentation/providers/auth_provider.dart';
 import 'package:frontend/presentation/screens/splash_screen.dart';
 import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:go_router/go_router.dart';
+import '../../main.dart';
 import 'app_nav.dart';
 import 'auth_nav.dart';
 
@@ -41,6 +42,7 @@ final mainRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = AuthChangeNotifier(ref);
   
   return GoRouter(
+    observers: [routeObserver],
     initialLocation: '/splash',
     debugLogDiagnostics: true,
     refreshListenable: refreshNotifier,

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/utils/logger.dart';
 import '../states/alarm_state.dart';
 import 'injection.dart';
 

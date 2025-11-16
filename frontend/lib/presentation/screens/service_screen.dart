@@ -36,7 +36,7 @@ class ServiceScreen extends ConsumerStatefulWidget {
 late DeviceStatusState device;
 bool isRefreshingAlarm = false;
 
-class _ServicePageState extends ConsumerState<ServiceScreen> {
+class _ServicePageState extends ConsumerState<ServiceScreen> with RouteAware {
   SfRangeValues soilSlider = SfRangeValues(0.0, 0.0);
   SfRangeValues previousSoilSlider = const SfRangeValues(0.0, 0.0);
 
@@ -48,13 +48,21 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
 
   List<Map<String, dynamic>> listAlarm = [];
 
-  String countdownText = '-';
+  String countdownText = 'No Further Alarms';
   Timer? countdownTimer;
   DateTime? nextAlarmTime;
   String nextAlarmPump = '-';
   String nextAlarmStr = '';
-  
 
+  @override
+  void didPopNext() async {
+    final deviceId = await SecureStorage.getDeviceId();
+    if (deviceId != null) {
+      await ref.read(alarmProvider.notifier).loadAlarm(deviceId);
+    }
+  }
+
+  
   @override
   void initState() {
     super.initState();
@@ -74,7 +82,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
     countdownTimer?.cancel();
 
     if (nextAlarmTime == null) {
-      setState(() => countdownText = '-');
+      setState(() => countdownText = 'No Further Alarms');
       return;
     }
 
@@ -82,7 +90,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
 
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (nextAlarmTime == null) {
-        setState(() => countdownText = "-");
+        setState(() => countdownText = "No Further Alarms");
         return; 
       }
 
@@ -126,7 +134,7 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
 
   void _updateCountdownText() {
     if (nextAlarmTime == null) {
-      setState(() => countdownText = '-');
+      setState(() => countdownText = 'No Further Alarms');
       return;
     }
 
@@ -330,6 +338,35 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
     });
   }
 
+  void _handleAlarmChanged(AlarmState state) {
+    if (state.nextAlarmStr.isEmpty) {
+      nextAlarmTime = null;
+      nextAlarmPump = '-';
+      countdownText = 'No Further Alarms';
+      setState(() {});
+      countdownTimer?.cancel();
+      return;
+    }
+
+    final parsed = DateTime.tryParse(state.nextAlarmStr);
+    if (parsed == null) return;
+
+    nextAlarmTime = parsed.toLocal();
+
+    final now = DateTime.now();
+    if (nextAlarmTime!.isBefore(now)) {
+      nextAlarmTime = nextAlarmTime!.add(const Duration(days: 1));
+    }
+
+    nextAlarmPump = DateFormat(
+      "MMM d’ yy 'at' HH:mm:ss",
+    ).format(nextAlarmTime!);
+
+    setState(() {});
+    _startCountdownTimer();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // super.build(context);
@@ -338,41 +375,12 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
     final pairState = deviceState.activePairState;
     final alarmState = ref.watch(alarmProvider);
     final deviceId = deviceState.pairedDeviceId;
-
     final pump = ref.watch(pumpStatusProvider);
     final pumpSwitch = (pump.pumpStatus ?? false) ? true : false;
     device = ref.watch(deviceStatusProvider);
 
-    ref.listen<AlarmState>(alarmProvider, (prev, next) {
-      if (next.nextAlarmStr.isEmpty) {
-        setState(() {
-          nextAlarmTime = null;
-          nextAlarmPump = '-';
-          countdownText = '-';
-        });
-        return;
-      }
-
-      final parsed = DateTime.tryParse(next.nextAlarmStr);
-      if (parsed == null) return;
-
-      // setting nextAlarmTime di state
-      setState(() {
-        nextAlarmTime = parsed.toLocal();
-
-        final now = DateTime.now();
-        if (nextAlarmTime!.isBefore(now)) {
-          nextAlarmTime = nextAlarmTime!.add(const Duration(days: 1));
-        }
-
-        nextAlarmPump = DateFormat(
-          "MMM d’ yy 'at' HH:mm:ss",
-        ).format(nextAlarmTime!);
-      });
-
-      // restart timer
-      _startCountdownTimer();
-    });
+    nextAlarmStr = alarmState.nextAlarmStr;
+    _handleAlarmChanged(alarmState);
 
     if (pairState == null) {
       // Jika belum ada device yang dipair
@@ -735,12 +743,16 @@ class _ServicePageState extends ConsumerState<ServiceScreen> {
                             fontWeight: AppFontWeight.semiBold,
                           ),
                         ),
+
                         Divider(color: AppColors.grayDivider),
 
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            context.push('/alarm');
+                          onTap: () async {
+                            final result = await context.push('/alarm');
+                            if (result == true) {
+                              
+                            }
                           },
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,

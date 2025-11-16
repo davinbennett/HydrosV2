@@ -20,6 +20,7 @@ import '../providers/alarm_provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/injection.dart';
 import '../providers/websocket/device_status_provider.dart';
+import '../widgets/alarm/app_bar.dart' hide AppBarType;
 import '../widgets/global/app_bar.dart';
 import '../widgets/global/button.dart';
 import '../widgets/global/loading.dart';
@@ -327,6 +328,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
       setState(() => isLoading = false);
 
       ref.read(alarmProvider.notifier).updateEnabledFromUI(alarmId.toString(), value);
+      await ref.read(alarmProvider.notifier).loadAlarm(deviceId);
 
     } catch (e) {
       if (!mounted) return;
@@ -676,10 +678,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
   @override
   Widget build(BuildContext context) {
     final mq = MediaQueryHelper.of(context);
-    final deviceState = ref.watch(deviceProvider);
-    final deviceId = deviceState.pairedDeviceId;
     final alarmState = ref.watch(alarmProvider);
-    logger.i("[ALARM SCREEN INIT] ${alarmState.listAlarm}");
 
     device = ref.watch(deviceStatusProvider);
 
@@ -701,7 +700,10 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
               ),
               child: Column(
                 children: [
-                  AppBarWidget(title: 'Alarm', type: AppBarType.back),
+                  AppBarAlarmWidget(
+                    title: 'Alarm', 
+                    type: AppBarAlarmType.back,
+                  ),
 
                   Padding(
                     padding: EdgeInsets.only(top: AppSpacingSize.xl),

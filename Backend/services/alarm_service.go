@@ -6,6 +6,7 @@ import (
 	"main/config"
 	"main/infrastructure/mqtt"
 	"main/repositories"
+	"sort"
 	"time"
 )
 
@@ -15,10 +16,22 @@ func GetDeviceAlarms(deviceID string) (map[string]any, string) {
 		return nil, err
 	}
 
+	sort.Slice(alarms, func(i, j int) bool {
+		t1 := alarms[i].ScheduleTime
+		t2 := alarms[j].ScheduleTime
+		if t1.Hour() != t2.Hour() {
+			return t1.Hour() < t2.Hour()
+		}
+		return t1.Minute() < t2.Minute()
+	})
+
+	now := time.Now()
 	var nextAlarm *time.Time
 	list := make([]map[string]any, 0, len(alarms))
 
 	for _, alarm := range alarms {
+
+		// ====== MASUKKAN KE LIST ALARM DULU ======
 		list = append(list, map[string]any{
 			"id":            alarm.ID,
 			"schedule_time": alarm.ScheduleTime.Format(time.RFC3339),
@@ -27,11 +40,53 @@ func GetDeviceAlarms(deviceID string) (map[string]any, string) {
 			"repeat_type":   alarm.RepeatType,
 		})
 
-		if nextAlarm == nil || alarm.ScheduleTime.Before(*nextAlarm) {
-			nextAlarm = alarm.ScheduleTime
+		// ====== PERHITUNGAN NEXT ALARM ======
+		if !alarm.IsEnabled || alarm.ScheduleTime == nil {
+			continue
+		}
+
+		// Convert to local time
+		st := alarm.ScheduleTime.Local()
+
+		// Ambil jam & menit
+		hour := st.Hour()
+		minute := st.Minute()
+
+		// Buat time untuk hari ini
+		todayTime := time.Date(
+			now.Year(), now.Month(), now.Day(),
+			hour, minute, 0, 0,
+			now.Location(),
+		)
+
+		var nextTime time.Time
+
+		switch alarm.RepeatType {
+		case 1: // once
+			// Jika sudah lewat → TETAP JADI nextTime (beda dengan daily)
+			nextTime = todayTime
+
+		case 2: // daily
+			nextTime = todayTime
+			if nextTime.Before(now) {
+				nextTime = nextTime.Add(24 * time.Hour)
+			}
+
+		case 3: // weekly
+			nextTime = todayTime
+			if nextTime.Before(now) {
+				nextTime = nextTime.Add(7 * 24 * time.Hour)
+			}
+		}
+
+		// pilih next paling dekat
+		if nextAlarm == nil || nextTime.Before(*nextAlarm) {
+			temp := nextTime
+			nextAlarm = &temp
 		}
 	}
 
+	// Hasil
 	var next string
 	if nextAlarm != nil {
 		next = nextAlarm.Format(time.RFC3339)
@@ -42,6 +97,7 @@ func GetDeviceAlarms(deviceID string) (map[string]any, string) {
 		"list_alarm": list,
 	}, ""
 }
+
 
 func AddAlarm(deviceID string, scheduleTime time.Time, durationOn, repeatType int) (uint, string) {
 	// 0. Cek status koneksi device
