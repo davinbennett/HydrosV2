@@ -432,7 +432,7 @@ void publishPumpStatusWithControl(int controlBy, bool pumpIsOn)
   doc["pump_status"] = pumpIsOn ? 1 : 2;     // 1 = ON, 2 = OFF
   doc["type"] = 2;                           // misalnya: 2 untuk pump status
   doc["control_by"] = (int)controlBy;        // 1=Device, 2=Switch, 3=Soil, 4=Alarm
-  doc["time"] = now.unixtime() - (1 * 3600); // pakai RTC/epoch timestamp : kurangi 7 jam biar sinkron dg be
+  doc["time"] = now.unixtime() - (7 * 3600); // pakai RTC/epoch timestamp : kurangi 7 jam biar sinkron dg be
   doc["soil_value"] = currentMoisturePercent;
 
   char payload[256];
@@ -1185,8 +1185,6 @@ void loop()
         }
         else
         {
-          // Pompa sedang ON → alarm di-skip 
-          Serial.println("Pompa lagi nyala, skip alarm");
         }
       }
     }
@@ -1199,18 +1197,6 @@ void loop()
     ledGreenOn = false;
     ledRedOn = true;
   }
-  // if (alarmTriggered) {
-  //   ledGreenOn = true;
-  //   ledRedOn = false;
-  //   if (!pumpIsOn) {
-  //     controlBy = ALARM;  // Alarm
-  //     alarmStartMillis = millis();
-  //   }
-  // }
-  // if (pumpIsOn && controlBy == ALARM && (millis() - alarmStartMillis >= alarmRunDuration)) {
-  //   ledGreenOn = false;
-  //   ledRedOn = true;
-  // }
 
   // =======================
   // RELAY & LED UPDATE

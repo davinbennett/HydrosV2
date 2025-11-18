@@ -102,7 +102,7 @@ func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]inte
 	}
 
 	if len(logs) == 0 {
-		return map[string]interface{}{
+		return map[string]any{
 			"last_pumped": nil,
 			"soil_min":    nil,
 			"soil_max":    nil,

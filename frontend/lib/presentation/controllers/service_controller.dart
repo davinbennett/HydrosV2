@@ -1,16 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/domain/usecase/alarm.dart';
+import 'package:frontend/domain/usecase/pumplog.dart';
 
 import '../../domain/usecase/device/control_pump.dart';
 
 class ServiceController {
   final ControlPumpUsecase controlPumpUsecase;
   final AlarmUsecase alarmUsecase;
+  final PumplogUsecase pumplogUsecase;
   final Ref ref;
 
   ServiceController({
     required this.alarmUsecase,
     required this.controlPumpUsecase,
+    required this.pumplogUsecase,
     required this.ref,
   });
 
@@ -44,5 +47,9 @@ class ServiceController {
     final data = await alarmUsecase.fetchAlarmUsecase(deviceId);
 
     return data;
+  }
+
+  Future<Map<String, dynamic>> getQuickActivityController(String deviceId) async {
+    return await pumplogUsecase.getQuickActivityUsecase(deviceId);
   }
 }

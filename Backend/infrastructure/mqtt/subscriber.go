@@ -157,7 +157,7 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 		data.DeviceID, data.PumpStatus, data.ControlBy, time.Unix(data.Time, 0), data.SoilValue)
 
 	// Parse waktu
-	t := time.Unix(data.Time, 0).UTC() // hasil: time.Time
+	t := time.Unix(data.Time, 0)
 	log.Printf("Parsed Time: %s", t.Format(time.RFC3339))
 
 	// --- Ambil status pompa dari DB ---

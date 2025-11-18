@@ -22,9 +22,13 @@ import 'package:frontend/presentation/controllers/signup_controller.dart';
 import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 
 import '../../data/impl/alarm.dart';
+import '../../data/impl/pumplog.dart';
 import '../../domain/repositories/alarm.dart';
+import '../../domain/repositories/pumplog.dart';
 import '../../domain/usecase/alarm.dart';
+import '../../domain/usecase/pumplog.dart';
 import '../../infrastructure/api/alarm_api.dart';
+import '../../infrastructure/api/pumplog_api.dart';
 import '../controllers/alarm_controller.dart';
 import '../controllers/service_controller.dart';
 
@@ -37,6 +41,9 @@ final deviceApiProvider = Provider<DeviceApi>((ref) {
 });
 final alarmApiProvider = Provider<AlarmApi>((ref) {
   return AlarmApi(ref);
+});
+final pumplogApiProvider = Provider<PumplogApi>((ref) {
+  return PumplogApi(ref);
 });
 
 final firebaseServiceProvider = Provider<GoogleSigninAuthService>((ref) {
@@ -56,6 +63,10 @@ final deviceRepositoryProvider = Provider<DeviceRepository>((ref) {
 final alarmRepositoryProvider = Provider<AlarmRepository>((ref) {
   final api = ref.read(alarmApiProvider);
   return AlarmImpl(api: api);
+});
+final pumplogRepositoryProvider = Provider<PumplogRepository>((ref) {
+  final api = ref.read(pumplogApiProvider);
+  return PumpLogImpl(api: api);
 });
 
 // UseCase
@@ -107,6 +118,10 @@ final controlPumpUsecaseProvider = Provider<ControlPumpUsecase>((ref) {
 final alarmUsecaseProvider = Provider<AlarmUsecase>((ref) {
   final repo = ref.read(alarmRepositoryProvider);
   return AlarmUsecase(repo);
+});
+final pumplogUsecaseProvider = Provider<PumplogUsecase>((ref) {
+  final repo = ref.read(pumplogRepositoryProvider);
+  return PumplogUsecase(repo);
 });
 
 // === controller ===
@@ -162,6 +177,7 @@ final serviceControllerProvider = Provider<ServiceController>((ref) {
   return ServiceController(
     alarmUsecase: alarmUsecase,
     controlPumpUsecase: usecase,
+    pumplogUsecase: ref.read(pumplogUsecaseProvider),
     ref: ref,
   );
 });

@@ -30,7 +30,7 @@ class AppBarWidget extends ConsumerWidget {
     final device = ref.watch(deviceStatusProvider);
 
     Color statusColor;
-    switch (device.status?.toLowerCase()) {
+    switch (Timer.periodic.status?.toLowerCase()) {
       case 'stable':
         statusColor = AppColors.success;
         break;

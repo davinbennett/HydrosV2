@@ -265,6 +265,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
         "repeat_type": repeatType,
         "is_enabled": true,
       });
+      await ref.read(alarmProvider.notifier).loadAlarm(deviceId);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

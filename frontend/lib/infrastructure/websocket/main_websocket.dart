@@ -77,7 +77,7 @@ void _listen(Ref ref) {
           case 'device_status':
             handleDeviceStatus(ref, json);
             break;
-          case 'update_enabled': // 🔥 TAMBAHAN DI SINI
+          case 'update_enabled': 
             handleUpdateEnabled(ref, json);
             break;
           default:
