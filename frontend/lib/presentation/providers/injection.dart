@@ -14,6 +14,7 @@ import 'package:frontend/domain/usecase/device/pair_device.dart';
 import 'package:frontend/infrastructure/api/auth_api.dart';
 import 'package:frontend/infrastructure/api/device_api.dart';
 import 'package:frontend/infrastructure/google_signin/auth.dart';
+import 'package:frontend/presentation/controllers/history_controller.dart';
 import 'package:frontend/presentation/controllers/login_controller.dart';
 import 'package:frontend/presentation/controllers/new_password_controller.dart';
 import 'package:frontend/presentation/controllers/pair_device_controller.dart';
@@ -23,12 +24,16 @@ import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 
 import '../../data/impl/alarm.dart';
 import '../../data/impl/pumplog.dart';
+import '../../data/impl/sensor_aggregated.dart';
 import '../../domain/repositories/alarm.dart';
 import '../../domain/repositories/pumplog.dart';
+import '../../domain/repositories/sensor.dart';
 import '../../domain/usecase/alarm.dart';
 import '../../domain/usecase/pumplog.dart';
+import '../../domain/usecase/sensor_aggregated.dart';
 import '../../infrastructure/api/alarm_api.dart';
 import '../../infrastructure/api/pumplog_api.dart';
+import '../../infrastructure/api/sensor_aggregated_api.dart';
 import '../controllers/alarm_controller.dart';
 import '../controllers/service_controller.dart';
 
@@ -44,6 +49,9 @@ final alarmApiProvider = Provider<AlarmApi>((ref) {
 });
 final pumplogApiProvider = Provider<PumplogApi>((ref) {
   return PumplogApi(ref);
+});
+final sensorAggregatedApiProvider = Provider<SensorAggregatedApi>((ref) {
+  return SensorAggregatedApi(ref);
 });
 
 final firebaseServiceProvider = Provider<GoogleSigninAuthService>((ref) {
@@ -67,6 +75,10 @@ final alarmRepositoryProvider = Provider<AlarmRepository>((ref) {
 final pumplogRepositoryProvider = Provider<PumplogRepository>((ref) {
   final api = ref.read(pumplogApiProvider);
   return PumpLogImpl(api: api);
+});
+final sensorAggregatedRepositoryProvider = Provider<SensorRepository>((ref) {
+  final api = ref.read(sensorAggregatedApiProvider);
+  return SensorImpl(api: api);
 });
 
 // UseCase
@@ -122,6 +134,10 @@ final alarmUsecaseProvider = Provider<AlarmUsecase>((ref) {
 final pumplogUsecaseProvider = Provider<PumplogUsecase>((ref) {
   final repo = ref.read(pumplogRepositoryProvider);
   return PumplogUsecase(repo);
+});
+final sensorAggregatedUsecaseProvider = Provider<SensorAggregatedUsecase>((ref) {
+  final repo = ref.read(sensorAggregatedRepositoryProvider);
+  return SensorAggregatedUsecase(repo);
 });
 
 // === controller ===
@@ -186,6 +202,14 @@ final alarmControllerProvider = Provider<AlarmController>((ref) {
   final alarmUsecase = ref.read(alarmUsecaseProvider);
   return AlarmController(
     alarmUsecase: alarmUsecase,
+    ref: ref,
+  );
+});
+
+final historyControllerProvider = Provider<HistoryController>((ref) {
+  final sensorAggregatedUsecase = ref.read(sensorAggregatedUsecaseProvider);
+  return HistoryController(
+    sensorAggregatedUsecase: sensorAggregatedUsecase,
     ref: ref,
   );
 });

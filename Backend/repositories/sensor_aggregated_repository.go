@@ -1,9 +1,12 @@
 package repositories
 
 import (
+	"errors"
 	"main/config"
 	"main/models"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 func SaveAggregatedSensor(data models.SensorAggregate) string {
@@ -25,8 +28,22 @@ func GetAggregatedSensorData(deviceID string, startDate, endDate *time.Time) (*m
 		query = query.Where("interval_end <= ?", *endDate)
 	}
 
-	if err := query.Order("interval_end desc").First(&result).Error; err != nil {
-		return nil, "Gagal mengambil data sensor teragregasi"
+	err := query.Order("interval_end desc").First(&result).Error
+
+	// Jika tidak ada record → tetap return success tapi dengan nilai default
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &models.SensorAggregate{
+			AvgTemperature:   0.0,
+			AvgHumidity:      0.0,
+			AvgSoilMoisture:  0.0,
+			IntervalStart:    nil,
+			IntervalEnd:      nil,
+		}, ""
+	}
+
+	// Jika error lain → return gagal
+	if err != nil {
+		return nil, "Failed to Get Environmental Averages"
 	}
 
 	return &result, ""

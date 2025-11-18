@@ -12,9 +12,12 @@ import '../../core/themes/font_weight.dart';
 import '../../core/themes/radius_size.dart';
 import '../../core/themes/spacing_size.dart';
 import '../../core/utils/media_query_helper.dart';
+import '../../infrastructure/local/secure_storage.dart';
 import '../providers/device_provider.dart';
+import '../providers/injection.dart';
 import '../widgets/global/app_bar.dart';
 import '../widgets/global/button.dart';
+import '../widgets/global/loading.dart';
 import '../widgets/history/line_chart.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -25,6 +28,12 @@ class HistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _HistoryPageState extends ConsumerState<HistoryScreen> {
+  double avgTemp = 0.0;
+  double avgHum = 0.0;
+  double avgSoil = 0.0;
+
+  bool isLoading = false;
+
   final List<String> filters = [
     'All',
     'Today',
@@ -45,6 +54,18 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
     FlSpot(5, 5),
     FlSpot(6, 8),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final deviceId = await SecureStorage.getDeviceId();
+      if (deviceId != null && deviceId.isNotEmpty) {
+        await _loadAggregatedData(deviceId);
+      }
+    });
+  }
 
   String getFormattedRange() {
     if (selectedRange == null) return 'Date Range';
@@ -84,6 +105,73 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
       });
     }
   }
+
+  String formatNumber(double value) {
+    if (value % 1 == 0) {
+      return value.toInt().toString();
+    }
+    return value.toString();
+  }
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    return (value as num).toDouble();
+  }
+
+
+  Future<void> _loadAggregatedData(String deviceId) async {
+    setState(() => isLoading = true);
+
+    final historyController = ref.read(historyControllerProvider);
+
+    bool isToday = selectedFilter == 'Today';
+    bool isLastDay =
+        selectedFilter == 'Last 7 Days';
+    bool isThisMonth = selectedFilter == 'This Month';
+
+    String startDate = '';
+    String endDate = '';
+
+    if (selectedFilter == 'Date Range' && selectedRange != null) {
+      startDate = DateFormat('yyyy-MM-dd').format(selectedRange!.start);
+      endDate = DateFormat('yyyy-MM-dd').format(selectedRange!.end);
+    }
+
+    try {
+      final result = await historyController.getSensorAggregatedController(
+        deviceId,
+        isToday,
+        isLastDay,
+        isThisMonth,
+        startDate,
+        endDate,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        avgTemp = _toDouble(result['avg_temperature']);
+        avgHum = _toDouble(result['avg_humidity']);
+        avgSoil = _toDouble(result['avg_soil']);
+        isLoading = false;
+      });
+
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
+        )
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -249,493 +337,516 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
     }
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(top: mq.notchHeight * 1.5),
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.only(
-                  left: AppSpacingSize.l,
-                  right: AppSpacingSize.l,
-                ),
-                child: AppBarWidget(title: 'History', type: AppBarType.main),
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: AppSpacingSize.l,
-                    right: AppSpacingSize.l,
+      body: Stack(
+        children:[
+          SingleChildScrollView(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(top: mq.notchHeight * 1.5),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: AppSpacingSize.l,
+                      right: AppSpacingSize.l,
+                    ),
+                    child: AppBarWidget(
+                      title: 'History',
+                      type: AppBarType.main,
+                    ),
                   ),
-                  child: Row(
-                    children:
-                        filters.map((filter) {
-                          final isSelected = selectedFilter == filter;
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: AppSpacingSize.l,
+                        right: AppSpacingSize.l,
+                      ),
+                      child: Row(
+                        children:
+                            filters.map((filter) {
+                              final isSelected = selectedFilter == filter;
 
-                          final showCalendarIcon = filter == 'Date Range';
-                          final textLabel =
-                              showCalendarIcon ? getFormattedRange() : filter;
+                              final showCalendarIcon = filter == 'Date Range';
+                              final textLabel =
+                                  showCalendarIcon
+                                      ? getFormattedRange()
+                                      : filter;
 
-                          return Padding(
-                            padding: EdgeInsets.only(right: AppSpacingSize.xs),
-                            child: GestureDetector(
-                              onTap: () async {
-                                if (filter == 'Date Range') {
-                                  await _pickDateRange(context);
-                                } else {
-                                  setState(() {
-                                    selectedFilter = filter;
-                                    selectedRange = null;
-                                  });
-                                }
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: AppSpacingSize.m,
-                                  vertical: AppSpacingSize.s * 0.8,
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  right: AppSpacingSize.xs,
                                 ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      isSelected
-                                          ? AppColors.orange.withOpacity(0.1)
-                                          : AppColors.white,
-                                  border: Border.all(
-                                    color:
-                                        isSelected
-                                            ? AppColors.orange
-                                            : AppColors.borderOrange,
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.rfull,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (showCalendarIcon)
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                          right: AppSpacingSize.xs,
-                                        ),
-                                        child: Icon(
-                                          Icons.calendar_today_rounded,
-                                          size: AppFontSize.m,
-                                          color:
-                                              isSelected
-                                                  ? AppColors.orange
-                                                  : AppColors.grayLight,
-                                        ),
-                                      ),
-                                    Text(
-                                      textLabel,
-                                      style: TextStyle(
-                                        fontSize: AppFontSize.s,
-                                        fontWeight:
-                                            isSelected
-                                                ? AppFontWeight.semiBold
-                                                : AppFontWeight.normal,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    if (filter == 'Date Range') {
+                                      await _pickDateRange(context);
+                                      if (selectedRange != null) {
+                                        await _loadAggregatedData(deviceId!);
+                                      }
+                                    } else {
+                                      setState(() {
+                                        selectedFilter = filter;
+                                        selectedRange = null;
+                                      });
+
+                                      await _loadAggregatedData(deviceId!);
+                                    }
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacingSize.m,
+                                      vertical: AppSpacingSize.s * 0.8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          isSelected
+                                              ? AppColors.orange.withOpacity(
+                                                0.1,
+                                              )
+                                              : AppColors.white,
+                                      border: Border.all(
                                         color:
                                             isSelected
                                                 ? AppColors.orange
-                                                : AppColors.grayLight,
+                                                : AppColors.borderOrange,
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.rfull,
                                       ),
                                     ),
-                                  ],
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (showCalendarIcon)
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                              right: AppSpacingSize.xs,
+                                            ),
+                                            child: Icon(
+                                              Icons.calendar_today_rounded,
+                                              size: AppFontSize.m,
+                                              color:
+                                                  isSelected
+                                                      ? AppColors.orange
+                                                      : AppColors.grayLight,
+                                            ),
+                                          ),
+                                        Text(
+                                          textLabel,
+                                          style: TextStyle(
+                                            fontSize: AppFontSize.s,
+                                            fontWeight:
+                                                isSelected
+                                                    ? AppFontWeight.semiBold
+                                                    : AppFontWeight.normal,
+                                            color:
+                                                isSelected
+                                                    ? AppColors.orange
+                                                    : AppColors.grayLight,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacingSize.xl),
+
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: AppSpacingSize.l,
+                      right: AppSpacingSize.l,
+                    ),
+                    child: Row(
+                      spacing: AppSpacingSize.s,
+                      children: [
+                        Icon(Icons.sticky_note_2_outlined),
+                        Text(
+                          'Environmental Averages',
+                          style: TextStyle(
+                            fontSize: AppFontSize.l,
+                            fontWeight: AppFontWeight.semiBold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacingSize.xs),
+
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: AppSpacingSize.l,
+                        right: AppSpacingSize.l,
+                      ),
+                      child: Row(
+                        spacing: AppSpacingSize.s,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.danger,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.rxl,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(AppSpacingSize.l),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    spacing: AppSpacingSize.xs,
+                                    children: [
+                                      Text(
+                                        'Temperature',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.m,
+                                          fontWeight: AppFontWeight.semiBold,
+                                          color: AppColors.white,
+                                        ),
+                                      ),
+                                      HugeIcon(
+                                        icon:
+                                            HugeIcons.strokeRoundedTemperature,
+                                        size: AppElementSize.xxl,
+                                        color: AppColors.white,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: AppSpacingSize.m),
+                                  Text(
+                                    formatNumber(avgTemp),
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.xxl,
+                                      fontWeight: AppFontWeight.semiBold,
+                                      color: AppColors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '°C',
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.l,
+                                      fontWeight: AppFontWeight.semiBold,
+                                      color: AppColors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.blue,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.rxl,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(AppSpacingSize.l),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    spacing: AppSpacingSize.s,
+                                    children: [
+                                      Text(
+                                        'Humidity',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.m,
+                                          fontWeight: AppFontWeight.semiBold,
+                                          color: AppColors.white,
+                                        ),
+                                      ),
+                                      HugeIcon(
+                                        icon: HugeIcons.strokeRoundedHumidity,
+                                        size: AppElementSize.xxl,
+                                        color: AppColors.white,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: AppSpacingSize.m),
+                                  Text(
+                                    formatNumber(avgHum),
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.xxl,
+                                      fontWeight: AppFontWeight.semiBold,
+                                      color: AppColors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '%',
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.l,
+                                      fontWeight: AppFontWeight.semiBold,
+                                      color: AppColors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.rxl,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(AppSpacingSize.l),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    spacing: AppSpacingSize.s,
+                                    children: [
+                                      Text(
+                                        'Soil Moisture',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.m,
+                                          fontWeight: AppFontWeight.semiBold,
+                                          color: AppColors.white,
+                                        ),
+                                      ),
+                                      HugeIcon(
+                                        icon:
+                                            HugeIcons
+                                                .strokeRoundedSoilMoistureField,
+                                        size: AppElementSize.xxl,
+                                        color: AppColors.white,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: AppSpacingSize.m),
+                                  Text(
+                                    formatNumber(avgSoil),
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.xxl,
+                                      fontWeight: AppFontWeight.semiBold,
+                                      color: AppColors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '%',
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.l,
+                                      fontWeight: AppFontWeight.semiBold,
+                                      color: AppColors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacingSize.l),
+
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: AppSpacingSize.l,
+                      right: AppSpacingSize.l,
+                    ),
+                    child: Row(
+                      spacing: AppSpacingSize.s,
+                      children: [
+                        HugeIcon(icon: HugeIcons.strokeRoundedActivity01),
+                        Text(
+                          'Water Flow Activity',
+                          style: TextStyle(
+                            fontSize: AppFontSize.l,
+                            fontWeight: AppFontWeight.semiBold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            '30',
+                            style: TextStyle(
+                              fontSize: AppFontSize.xxl,
+                              fontWeight: AppFontWeight.semiBold,
+                            ),
+                          ),
+                          Text('Total Pumps'),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            '30',
+                            style: TextStyle(
+                              fontSize: AppFontSize.xxl,
+                              fontWeight: AppFontWeight.semiBold,
+                            ),
+                          ),
+                          Text('Average Duration'),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: AppSpacingSize.s,
+                      left: AppSpacingSize.l,
+                      right: AppSpacingSize.l,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.rm),
+                        border: Border.all(
+                          color: AppColors.borderOrange,
+                          width: 0.7,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSpacingSize.m,
+                        ),
+                        child: LineChartWidget(
+                          title: 'Pump Activation Frequency',
+                          yLabel: 'Times',
+                          bottomLabels: [
+                            '00:00',
+                            '04:00',
+                            '08:00',
+                            '12:00',
+                            '16:00',
+                            '20:00',
+                            '23:59',
+                          ],
+                          data: pumpFrequency,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacingSize.l),
+
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacingSize.l),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// Header row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Details',
+                              style: TextStyle(
+                                fontWeight: AppFontWeight.medium,
+                                fontSize: AppFontSize.m,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  showDragHandle: true,
+                                  isScrollControlled: true,
+                                  backgroundColor: AppColors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(AppRadius.rxl),
+                                    ),
+                                  ),
+                                  builder:
+                                      (context) => FractionallySizedBox(
+                                        heightFactor: 0.85,
+                                        child: Padding(
+                                          padding: EdgeInsetsGeometry.symmetric(
+                                            horizontal: AppSpacingSize.l,
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'All Pump History',
+                                                style: TextStyle(
+                                                  fontSize: AppFontSize.l,
+                                                  fontWeight:
+                                                      AppFontWeight.bold,
+                                                ),
+                                              ),
+                                              SizedBox(height: 12),
+                                              Expanded(
+                                                child: ListView.builder(
+                                                  itemCount: pumpLogs.length,
+                                                  itemBuilder:
+                                                      (context, index) =>
+                                                          _PumpHistoryItem(
+                                                            pumpLogs[index],
+                                                          ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                );
+                              },
+                              child: Text(
+                                'See all',
+                                style: TextStyle(
+                                  color: AppColors.success,
+                                  fontWeight: AppFontWeight.medium,
                                 ),
                               ),
                             ),
-                          );
-                        }).toList(),
-                  ),
-                ),
-              ),
+                          ],
+                        ),
 
-              SizedBox(height: AppSpacingSize.xl),
+                        SizedBox(height: AppSpacingSize.xs),
 
-              // ! === DEBUG ===
-              // Center(
-              //   child: Text(
-              // selectedFilter == 'Date Range'
-              //     ? 'Showing data from ${getFormattedRange()}'
-              //     : 'Showing data for $selectedFilter',
-              //     style: TextStyle(
-              //       fontSize: AppFontSize.m,
-              //       color: AppColors.grayMedium,
-              //     ),
-              //   ),
-              // ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: AppSpacingSize.l,
-                  right: AppSpacingSize.l,
-                ),
-                child: Row(
-                  spacing: AppSpacingSize.s,
-                  children: [
-                    Icon(Icons.sticky_note_2_outlined),
-                    Text(
-                      'Environmental Averages',
-                      style: TextStyle(
-                        fontSize: AppFontSize.l,
-                        fontWeight: AppFontWeight.semiBold,
-                      ),
+                        /// List preview
+                        ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: shortList.length,
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemBuilder:
+                              (context, index) =>
+                                  _PumpHistoryItem(shortList[index]),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: AppSpacingSize.xs),
-
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: AppSpacingSize.l,
-                    right: AppSpacingSize.l,
-                  ),
-                  child: Row(
-                    spacing: AppSpacingSize.s,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.danger,
-                          borderRadius: BorderRadius.circular(AppRadius.rxl),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacingSize.l),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: AppSpacingSize.xs,
-                                children: [
-                                  Text(
-                                    'Temperature',
-                                    style: TextStyle(
-                                      fontSize: AppFontSize.m,
-                                      fontWeight: AppFontWeight.semiBold,
-                                      color: AppColors.white,
-                                    ),
-                                  ),
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedTemperature,
-                                    size: AppElementSize.xxl,
-                                    color: AppColors.white,
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: AppSpacingSize.m),
-                              Text(
-                                '30',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.xxl,
-                                  fontWeight: AppFontWeight.semiBold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              Text(
-                                '°C',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.l,
-                                  fontWeight: AppFontWeight.semiBold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blue,
-                          borderRadius: BorderRadius.circular(AppRadius.rxl),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacingSize.l),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: AppSpacingSize.s,
-                                children: [
-                                  Text(
-                                    'Humidity',
-                                    style: TextStyle(
-                                      fontSize: AppFontSize.m,
-                                      fontWeight: AppFontWeight.semiBold,
-                                      color: AppColors.white,
-                                    ),
-                                  ),
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedHumidity,
-                                    size: AppElementSize.xxl,
-                                    color: AppColors.white,
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: AppSpacingSize.m),
-                              Text(
-                                '30',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.xxl,
-                                  fontWeight: AppFontWeight.semiBold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              Text(
-                                '%',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.l,
-                                  fontWeight: AppFontWeight.semiBold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.success,
-                          borderRadius: BorderRadius.circular(AppRadius.rxl),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacingSize.l),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: AppSpacingSize.s,
-                                children: [
-                                  Text(
-                                    'Soil Moisture',
-                                    style: TextStyle(
-                                      fontSize: AppFontSize.m,
-                                      fontWeight: AppFontWeight.semiBold,
-                                      color: AppColors.white,
-                                    ),
-                                  ),
-                                  HugeIcon(
-                                    icon:
-                                        HugeIcons
-                                            .strokeRoundedSoilMoistureField,
-                                    size: AppElementSize.xxl,
-                                    color: AppColors.white,
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: AppSpacingSize.m),
-                              Text(
-                                '30',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.xxl,
-                                  fontWeight: AppFontWeight.semiBold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              Text(
-                                '%',
-                                style: TextStyle(
-                                  fontSize: AppFontSize.l,
-                                  fontWeight: AppFontWeight.semiBold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              SizedBox(height: AppSpacingSize.l),
-
-              Padding(
-                padding: EdgeInsets.only(
-                  left: AppSpacingSize.l,
-                  right: AppSpacingSize.l,
-                ),
-                child: Row(
-                  spacing: AppSpacingSize.s,
-                  children: [
-                    HugeIcon(icon: HugeIcons.strokeRoundedActivity01),
-                    Text(
-                      'Water Flow Activity',
-                      style: TextStyle(
-                        fontSize: AppFontSize.l,
-                        fontWeight: AppFontWeight.semiBold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Column(
-                    children: [
-                      Text(
-                        '30',
-                        style: TextStyle(
-                          fontSize: AppFontSize.xxl,
-                          fontWeight: AppFontWeight.semiBold,
-                        ),
-                      ),
-                      Text('Total Pumps'),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        '30',
-                        style: TextStyle(
-                          fontSize: AppFontSize.xxl,
-                          fontWeight: AppFontWeight.semiBold,
-                        ),
-                      ),
-                      Text('Average Duration'),
-                    ],
                   ),
                 ],
               ),
-
-              Padding(
-                padding: EdgeInsets.only(
-                  top: AppSpacingSize.s,
-                  left: AppSpacingSize.l,
-                  right: AppSpacingSize.l,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(AppRadius.rm),
-                    border: Border.all(
-                      color: AppColors.borderOrange,
-                      width: 0.7,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacingSize.m),
-                    child: LineChartWidget(
-                      title: 'Pump Activation Frequency',
-                      yLabel: 'Times',
-                      bottomLabels: [
-                        '00:00',
-                        '04:00',
-                        '08:00',
-                        '12:00',
-                        '16:00',
-                        '20:00',
-                        '23:59',
-                      ],
-                      data: pumpFrequency,
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(height: AppSpacingSize.l),
-
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacingSize.l),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// Header row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Details',
-                          style: TextStyle(
-                            fontWeight: AppFontWeight.medium,
-                            fontSize: AppFontSize.m,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              showDragHandle: true,
-                              isScrollControlled: true,
-                              backgroundColor: AppColors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(AppRadius.rxl),
-                                ),
-                              ),
-                              builder:
-                                  (context) => FractionallySizedBox(
-                                    heightFactor: 0.85,
-                                    child: Padding(
-                                      padding: EdgeInsetsGeometry.symmetric(horizontal: AppSpacingSize.l),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'All Pump History',
-                                            style: TextStyle(
-                                              fontSize: AppFontSize.l,
-                                              fontWeight: AppFontWeight.bold,
-                                            ),
-                                          ),
-                                          SizedBox(height: 12),
-                                          Expanded(
-                                            child: ListView.builder(
-                                              itemCount: pumpLogs.length,
-                                              itemBuilder:
-                                                  (context, index) =>
-                                                      _PumpHistoryItem(
-                                                        pumpLogs[index],
-                                                      ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                            );
-                          },
-                          child: Text(
-                            'See all',
-                            style: TextStyle(
-                              color: AppColors.success,
-                              fontWeight: AppFontWeight.medium,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: AppSpacingSize.xs),
-
-                    /// List preview
-                    ListView.builder(
-                      padding: EdgeInsets.zero,
-                      itemCount: shortList.length,
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemBuilder:
-                          (context, index) =>
-                              _PumpHistoryItem(shortList[index]),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          if (isLoading) LoadingWidget(),
+        ], 
       ),
     );
   }

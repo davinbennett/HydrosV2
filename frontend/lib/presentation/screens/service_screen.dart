@@ -79,8 +79,6 @@ class _ServicePageState extends ConsumerState<ServiceScreen> with RouteAware {
         await _loadSoilSetting(deviceId);
         await ref.read(alarmProvider.notifier).loadAlarm(deviceId);
         _loadQuickActivity();
-      } else {
-        logger.w("⚠️ Device belum terpair, skip load soil setting");
       }
     });
   }
