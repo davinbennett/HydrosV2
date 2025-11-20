@@ -151,8 +151,9 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
 
         DateTime? parsedEnd = DateTime.tryParse(end);
         if (parsedEnd != null) {
+          final localEnd = parsedEnd.toLocal();
           formattedEnd =
-              "${parsedEnd.hour.toString().padLeft(2, '0')}:${parsedEnd.minute.toString().padLeft(2, '0')}";
+              "${localEnd.hour.toString().padLeft(2, '0')}:${localEnd.minute.toString().padLeft(2, '0')}";
         }
 
         convertedLogs.add({
@@ -705,7 +706,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                       Column(
                         children: [
                           Text(
-                            '${avgDuration.toInt()}',
+                            '$avgDuration',
                             style: TextStyle(
                               fontSize: AppFontSize.xxl,
                               fontWeight: AppFontWeight.semiBold,

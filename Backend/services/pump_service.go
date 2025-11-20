@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"main/repositories"
+	"math"
 	"time"
 )
 
@@ -38,13 +39,15 @@ func GetPumpLog(deviceID string, from, to *time.Time) (any, string) {
 	}
 
 	totalDuration := 0
+	validCount := 0
 	details := make([]any, 0, len(logs))
 
 	for _, log := range logs {
-		// skip kalau start / end time null
 		if log.StartTime == nil || log.EndTime == nil {
 			continue
 		}
+		
+		validCount++
 
 		duration := int(log.EndTime.Sub(*log.StartTime).Seconds())
 		totalDuration += duration
@@ -59,14 +62,25 @@ func GetPumpLog(deviceID string, from, to *time.Time) (any, string) {
 		})
 	}
 
-	average := totalDuration / len(logs)
+	if validCount == 0 {
+		return map[string]any{
+			"total_pump":       0,
+			"average_duration": 0.0,
+			"detail":           details,
+		}, ""
+	}
+
+	average := float64(totalDuration) / float64(validCount)
+
+	average = math.Round(average*100) / 100
 
 	return map[string]any{
-		"total_pump":       len(logs),
+		"total_pump":       validCount,
 		"average_duration": average,
 		"detail":           details,
 	}, ""
 }
+
 
 func DeletePumpLog(id string) string {
 	return repositories.DeletePumpLogByID(id)

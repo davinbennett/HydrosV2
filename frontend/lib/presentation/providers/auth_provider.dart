@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/domain/entities/auth.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/states/auth_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AsyncValue<AuthState>>(
   (ref) {
@@ -33,6 +34,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<AuthState>> {
 
   Future<void> logout() async {
     await SecureStorage.clearAll();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     state = AsyncValue.data(AuthUnauthenticated());
   }
 

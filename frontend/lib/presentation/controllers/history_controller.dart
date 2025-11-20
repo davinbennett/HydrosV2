@@ -60,9 +60,7 @@ class HistoryController {
     final totalPump = data['total_pump'] ?? 0;
 
     // average_duration
-    final rawAvg = data['average_duration'];
-    final avgDurationRaw = double.tryParse(rawAvg.toString()) ?? 0.0;
-    final avgDuration = double.parse(avgDurationRaw.toStringAsFixed(1));
+    final avgDuration = data['average_duration'];
 
     final details = data['detail'] ?? [];
 
@@ -75,7 +73,7 @@ class HistoryController {
       DateTime? startTime;
 
       try {
-        startTime = DateTime.parse(startTimeStr);
+        startTime = DateTime.parse(startTimeStr).toLocal();
       } catch (_) {
         continue;
       }

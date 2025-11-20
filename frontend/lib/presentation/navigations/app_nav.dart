@@ -78,7 +78,6 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
     ref.listen<AsyncValue<AuthState>>(authProvider, (prev, next) {
       final state = next.value;
       if (state is AuthSessionExpired) {
-        logger.i("EXP");
         WidgetsBinding.instance.addPostFrameCallback((_) {
           showDialog(
             context: context,
@@ -91,8 +90,10 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        final deviceId = await SecureStorage.getDeviceId();
                         ref.read(authProvider.notifier).logout();
+                        ref.read(deviceProvider.notifier).setUnpaired(deviceId!);
                         context.go('/login');
                       },
                       child: Text("OK"),
