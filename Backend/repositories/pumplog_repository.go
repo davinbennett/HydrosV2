@@ -41,7 +41,7 @@ func GetPumpStartTimes(deviceID string) ([]map[string]any, string) {
 	return results, ""
 }
 
-func FindPumpLog(deviceID string, from, to *time.Time, limit int) ([]models.PumpLog, string) {
+func FindPumpLog(deviceID string, from, to *time.Time) ([]models.PumpLog, string) {
 	var logs []models.PumpLog
 
 	query := config.PostgresDB.Where("device_id = ?", deviceID)
@@ -49,7 +49,7 @@ func FindPumpLog(deviceID string, from, to *time.Time, limit int) ([]models.Pump
 		query = query.Where("start_time >= ? AND end_time <= ?", *from, *to)
 	}
 
-	if err := query.Order("start_time DESC").Limit(limit).Find(&logs).Error; err != nil {
+	if err := query.Order("start_time DESC").Find(&logs).Error; err != nil {
 		return nil, "Failed to get pump logs. Please try again later."
 	}
 	return logs, ""

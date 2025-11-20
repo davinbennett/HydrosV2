@@ -12,6 +12,8 @@ import '../../core/themes/font_weight.dart';
 import '../../core/themes/radius_size.dart';
 import '../../core/themes/spacing_size.dart';
 import '../../core/utils/media_query_helper.dart';
+import '../../core/utils/monthname.dart';
+import '../../core/utils/triggeredby.dart';
 import '../../infrastructure/local/secure_storage.dart';
 import '../providers/device_provider.dart';
 import '../providers/injection.dart';
@@ -32,6 +34,9 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
   double avgHum = 0.0;
   double avgSoil = 0.0;
 
+  int totalPump = 0;
+  double avgDuration = 0.0;
+
   bool isLoading = false;
 
   final List<String> filters = [
@@ -45,14 +50,26 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
   String selectedFilter = 'All';
   DateTimeRange? selectedRange;
 
-  final pumpFrequency = [
-    FlSpot(0, 1),
-    FlSpot(1, 2),
-    FlSpot(2, 1.5),
-    FlSpot(3, 8),
-    FlSpot(4, 3.5),
-    FlSpot(5, 5),
-    FlSpot(6, 8),
+  List<FlSpot> pumpFrequency = [
+    FlSpot(0, 0),
+    FlSpot(1, 0),
+    FlSpot(2, 0),
+    FlSpot(3, 0),
+    FlSpot(4, 0),
+    FlSpot(5, 0),
+    FlSpot(6, 0),
+  ];
+
+  List<Map<String, dynamic>> pumpLogs = [
+    {
+      'user': '',
+      'date': '',
+      'start': '',
+      'end': '',
+      'duration': '0m',
+      'moistureBefore': 0,
+      'moistureAfter': 0,
+    },
   ];
 
   @override
@@ -63,8 +80,121 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
       final deviceId = await SecureStorage.getDeviceId();
       if (deviceId != null && deviceId.isNotEmpty) {
         await _loadAggregatedData(deviceId);
+        await _loadWaterFlowActivity(deviceId);
       }
     });
+  }
+
+  Future<void> _loadWaterFlowActivity(String deviceId) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final historyController = ref.read(historyControllerProvider);
+
+    bool isToday = selectedFilter == 'Today';
+    bool isLastDay = selectedFilter == 'Last 7 Days';
+    bool isThisMonth = selectedFilter == 'This Month';
+
+    String startDate = '';
+    String endDate = '';
+
+    if (selectedFilter == 'Date Range' && selectedRange != null) {
+      startDate = DateFormat('yyyy-MM-dd').format(selectedRange!.start);
+      endDate = DateFormat('yyyy-MM-dd').format(selectedRange!.end);
+    }
+
+    try {
+      final result = await historyController
+          .getWaterFlowActivityController(
+            deviceId,
+            isToday,
+            isLastDay,
+            isThisMonth,
+            startDate,
+            endDate,
+          );
+
+      final total = result['total_pump'];
+      final avg = result['average_duration'];
+      
+      final details = (result['detail'] ?? []);
+
+      List<Map<String, dynamic>> convertedLogs = [];
+
+      for (var d in details) {
+        final start = d['start_time'] ?? "";
+        final end = d['end_time'] ?? "";
+        final duration = d['time_difference'] ?? "";
+        final triggeredBy = mapTriggeredBy(d['triggered_by']);
+        final before = d['soil_before'] ?? 0;
+        final after = d['soil_after'] ?? 0;
+
+        // Convert ISO → display date
+        // Example "2025-11-20T10:15:00Z"
+        DateTime? parsed = DateTime.tryParse(start);
+
+        String formattedDate = "";
+        String formattedStart = "";
+        String formattedEnd = "";
+
+        if (parsed != null) {
+          final local = parsed.toLocal();
+
+          formattedDate =
+              "${local.day.toString().padLeft(2, '0')} ${monthName(local.month)} ${local.year}";
+
+          formattedStart =
+              "${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}";
+        }
+
+
+        DateTime? parsedEnd = DateTime.tryParse(end);
+        if (parsedEnd != null) {
+          formattedEnd =
+              "${parsedEnd.hour.toString().padLeft(2, '0')}:${parsedEnd.minute.toString().padLeft(2, '0')}";
+        }
+
+        convertedLogs.add({
+          'user': triggeredBy,
+          'date': formattedDate,
+          'start': formattedStart,
+          'end': formattedEnd,
+          'duration': duration,
+          'moistureBefore': before,
+          'moistureAfter': after,
+        });
+      }
+
+
+      final List<dynamic> freq = result['chart_frequency'] ?? [];
+      final List<FlSpot> chart = [];
+
+      for (int i = 0; i < freq.length; i++) {
+        final value = double.tryParse(freq[i].toString()) ?? 0.0;
+        chart.add(FlSpot(i.toDouble(), value));
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        totalPump = total;
+        avgDuration = avg;
+        pumpLogs = convertedLogs;
+        pumpFrequency = chart;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   String getFormattedRange() {
@@ -115,9 +245,9 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
 
   double _toDouble(dynamic value) {
     if (value == null) return 0.0;
-    return (value as num).toDouble();
+    final double convertedDouble = (value as num).toDouble();
+    return double.parse(convertedDouble.toStringAsFixed(2));
   }
-
 
   Future<void> _loadAggregatedData(String deviceId) async {
     setState(() => isLoading = true);
@@ -125,8 +255,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
     final historyController = ref.read(historyControllerProvider);
 
     bool isToday = selectedFilter == 'Today';
-    bool isLastDay =
-        selectedFilter == 'Last 7 Days';
+    bool isLastDay = selectedFilter == 'Last 7 Days';
     bool isThisMonth = selectedFilter == 'This Month';
 
     String startDate = '';
@@ -155,23 +284,19 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
         avgSoil = _toDouble(result['avg_soil']);
         isLoading = false;
       });
-
     } catch (e) {
       if (!mounted) return;
 
       setState(() => isLoading = false);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
           behavior: SnackBarBehavior.floating,
-        )
+        ),
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -180,126 +305,6 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
     final pairState = deviceState.activePairState;
     final deviceId = deviceState.pairedDeviceId;
 
-    final List<Map<String, dynamic>> pumpLogs = [
-      {
-        'user': 'System (Auto)',
-        'date': '03 Nov 2025',
-        'start': '10:15',
-        'end': '10:20',
-        'duration': '5m',
-        'moistureBefore': 40,
-        'moistureAfter': 55,
-      },
-      {
-        'user': 'Davin',
-        'date': '03 Nov 2025',
-        'start': '08:05',
-        'end': '08:08',
-        'duration': '3m',
-        'moistureBefore': 42,
-        'moistureAfter': 58,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '02 Nov 2025',
-        'start': '21:10',
-        'end': '21:15',
-        'duration': '5m',
-        'moistureBefore': 39,
-        'moistureAfter': 53,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '02 Nov 2025',
-        'start': '17:40',
-        'end': '17:44',
-        'duration': '4m',
-        'moistureBefore': 41,
-        'moistureAfter': 56,
-      },
-      {
-        'user': 'Davin',
-        'date': '02 Nov 2025',
-        'start': '09:22',
-        'end': '09:27',
-        'duration': '5m',
-        'moistureBefore': 43,
-        'moistureAfter': 59,
-      },
-      // contoh tambahan data untuk bottom sheet
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-      {
-        'user': 'System (Auto)',
-        'date': '01 Nov 2025',
-        'start': '15:10',
-        'end': '15:13',
-        'duration': '3m',
-        'moistureBefore': 37,
-        'moistureAfter': 52,
-      },
-    ];
     final shortList = pumpLogs.take(5).toList();
 
     if (pairState == null) {
@@ -338,7 +343,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
 
     return Scaffold(
       body: Stack(
-        children:[
+        children: [
           SingleChildScrollView(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(top: mq.notchHeight * 1.5),
@@ -382,6 +387,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                                       await _pickDateRange(context);
                                       if (selectedRange != null) {
                                         await _loadAggregatedData(deviceId!);
+                                        await _loadWaterFlowActivity(deviceId);
                                       }
                                     } else {
                                       setState(() {
@@ -390,6 +396,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                                       });
 
                                       await _loadAggregatedData(deviceId!);
+                                      await _loadWaterFlowActivity(deviceId);
                                     }
                                   },
                                   child: AnimatedContainer(
@@ -686,7 +693,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                       Column(
                         children: [
                           Text(
-                            '30',
+                            '$totalPump',
                             style: TextStyle(
                               fontSize: AppFontSize.xxl,
                               fontWeight: AppFontWeight.semiBold,
@@ -698,13 +705,13 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                       Column(
                         children: [
                           Text(
-                            '30',
+                            '${avgDuration.toInt()}',
                             style: TextStyle(
                               fontSize: AppFontSize.xxl,
                               fontWeight: AppFontWeight.semiBold,
                             ),
                           ),
-                          Text('Average Duration'),
+                          Text('Average Duration (s)'),
                         ],
                       ),
                     ],
@@ -739,7 +746,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                             '12:00',
                             '16:00',
                             '20:00',
-                            '23:59',
+                            '00:00',
                           ],
                           data: pumpFrequency,
                         ),
@@ -846,7 +853,7 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
           ),
 
           if (isLoading) LoadingWidget(),
-        ], 
+        ],
       ),
     );
   }

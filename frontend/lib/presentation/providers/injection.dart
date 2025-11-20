@@ -208,8 +208,10 @@ final alarmControllerProvider = Provider<AlarmController>((ref) {
 
 final historyControllerProvider = Provider<HistoryController>((ref) {
   final sensorAggregatedUsecase = ref.read(sensorAggregatedUsecaseProvider);
+  final pumplogUsecase = ref.read(pumplogUsecaseProvider);
   return HistoryController(
     sensorAggregatedUsecase: sensorAggregatedUsecase,
+    pumplogUsecase: pumplogUsecase,
     ref: ref,
   );
 });

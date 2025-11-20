@@ -13,5 +13,7 @@ func GetSensorAggregate(deviceID string, today, lastday, month bool, start, end 
 	if err != nil {
 		return nil, err.Error()
 	}
-	return repositories.GetAggregatedSensorData(deviceID, startDate, endDate)
+
+	data, err2 := repositories.GetAggregatedSensorData(deviceID, startDate, endDate)
+	return data, err2
 }

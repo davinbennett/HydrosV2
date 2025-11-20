@@ -68,4 +68,89 @@ class PumplogApi {
       throw 'An unknown error occurred.';
     }
   }
+
+  Future<Map<String, dynamic>> getWaterFlowActivityApi(
+    String devideId,
+    bool isToday,
+    bool isLastDay,
+    bool isThisMonth,
+    String startDate,
+    String endDate,
+  ) async {
+    try {
+      final authState = ref.read(authProvider).value;
+      String? accessToken;
+
+      if (authState is AuthAuthenticated) {
+        accessToken = authState.user.accessToken;
+      }
+
+      if (accessToken == null) {
+        throw 'Unauthorized: Token not found.';
+      }
+
+      final queryParams = {
+        'today': isToday.toString(),
+        'lastday': isLastDay.toString(),
+        'month': isThisMonth.toString(),
+      };
+
+      if (startDate.isNotEmpty && endDate.isNotEmpty) {
+        queryParams['start-date'] = startDate;
+        queryParams['end-date'] = endDate;
+      }
+
+      final response = await _dio.get(
+        '/pumplog/water-flow/$devideId',
+        queryParameters: queryParams,
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+
+      if (response.data['code'] == 200) {
+        final data = response.data['data'] ?? {};
+
+        final totalPump = (data['total_pump'] ?? 0) as int;
+
+        final rawAvg = data['average_duration'];
+        final avgDuration =
+            rawAvg == null
+                ? 0.0
+                : double.tryParse(rawAvg.toString())?.toDouble() ?? 0.0;
+
+        final avgDurationFixed = double.parse(avgDuration.toStringAsFixed(2));
+
+        final detail = (data['detail'] ?? []) as List;
+
+        return {
+          'total_pump': totalPump,
+          'average_duration': avgDurationFixed,
+          'detail': detail,
+        };
+      }
+
+      throw response.data ?? 'Failed to get data water flow activity.';
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          throw 'Connection timeout. Please try again.';
+
+        case DioExceptionType.connectionError:
+          throw 'Unable to connect to the server. Please check your internet connection.';
+
+        case DioExceptionType.badResponse:
+          final message = e.response?.data;
+          if (message is String && message.isNotEmpty) {
+            throw message;
+          }
+          throw 'Server responded with an error.';
+
+        default:
+          throw e.message ?? 'An unknown server error occurred.';
+      }
+    } catch (e) {
+      throw 'An unknown error occurred.';
+    }
+  }
 }

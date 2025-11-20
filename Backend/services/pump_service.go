@@ -19,18 +19,18 @@ func GetLastWatered(deviceID string) (*time.Time, string) {
 	return &pumpLog.UpdatedAt, ""
 }
 
-func GetPumpStartTimes(deviceID string) ([]map[string]interface{}, string) {
+func GetPumpStartTimes(deviceID string) ([]map[string]any, string) {
 	return repositories.GetPumpStartTimes(deviceID)
 }
 
-func GetPumpLog(deviceID string, from, to *time.Time, limit int) (any, string) {
-	logs, err := repositories.FindPumpLog(deviceID, from, to, limit)
+func GetPumpLog(deviceID string, from, to *time.Time) (any, string) {
+	logs, err := repositories.FindPumpLog(deviceID, from, to)
 	if err != "" {
 		return nil, err
 	}
 
 	if len(logs) == 0 {
-		return map[string]interface{}{
+		return map[string]any{
 			"total_pump":       0,
 			"average_duration": 0,
 			"detail":           []any{},
@@ -68,35 +68,12 @@ func GetPumpLog(deviceID string, from, to *time.Time, limit int) (any, string) {
 	}, ""
 }
 
-func GetPumpLogDetailList(deviceID string, from, to *time.Time) ([]map[string]interface{}, string) {
-	logs, err := repositories.FindPumpLog(deviceID, from, to, 0) // 0 = no limit
-	if err != "" {
-		return nil, err
-	}
-
-	result := make([]map[string]interface{}, 0, len(logs))
-	for _, log := range logs {
-		duration := int(log.EndTime.Sub(*log.StartTime).Seconds())
-		result = append(result, map[string]interface{}{
-			"id":              log.ID,
-			"triggered_by":    log.TriggeredBy,
-			"start_time":      log.StartTime.Format(time.RFC3339),
-			"end_time":        log.EndTime.Format(time.RFC3339),
-			"time_difference": fmt.Sprintf("%ds", duration),
-			"soil_before":     log.SoilBefore,
-			"soil_after":      log.SoilAfter,
-		})
-	}
-
-	return result, ""
-}
-
 func DeletePumpLog(id string) string {
 	return repositories.DeletePumpLogByID(id)
 }
 
-func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]interface{}, string) {
-	logs, err := repositories.FindPumpLog(deviceID, from, to, 1000)
+func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]any, string) {
+	logs, err := repositories.FindPumpLog(deviceID, from, to)
 	if err != "" {
 		return nil, err
 	}
@@ -125,7 +102,7 @@ func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]inte
 		}
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"last_pumped": lastPumped.Format(time.RFC3339),
 		"soil_min":    soilMin,
 		"soil_max":    soilMax,

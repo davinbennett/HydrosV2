@@ -19,31 +19,31 @@ func SaveAggregatedSensor(data models.SensorAggregate) string {
 func GetAggregatedSensorData(deviceID string, startDate, endDate *time.Time) (*models.SensorAggregate, string) {
 	var result models.SensorAggregate
 
-	query := config.PostgresDB.Where("device_id = ?", deviceID)
+	query := config.PostgresDB.
+		Model(&models.SensorAggregate{}).
+		Select("AVG(avg_temperature) AS avg_temperature, AVG(avg_humidity) AS avg_humidity, AVG(avg_soil_moisture) AS avg_soil_moisture")
+
+	query = query.Where("device_id = ?", deviceID)
 
 	if startDate != nil {
-		query = query.Where("interval_start >= ?", *startDate)
+		query = query.Where("interval_end >= ?", *startDate)
 	}
 	if endDate != nil {
 		query = query.Where("interval_end <= ?", *endDate)
 	}
 
-	err := query.Order("interval_end desc").First(&result).Error
+	err := query.Scan(&result).Error
 
-	// Jika tidak ada record → tetap return success tapi dengan nilai default
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return &models.SensorAggregate{
-			AvgTemperature:   0.0,
-			AvgHumidity:      0.0,
-			AvgSoilMoisture:  0.0,
-			IntervalStart:    nil,
-			IntervalEnd:      nil,
+			AvgTemperature:  0.0,
+			AvgHumidity:     0.0,
+			AvgSoilMoisture: 0.0,
 		}, ""
 	}
 
-	// Jika error lain → return gagal
 	if err != nil {
-		return nil, "Failed to Get Environmental Averages"
+		return nil, "Failed to calculate aggregated averages"
 	}
 
 	return &result, ""

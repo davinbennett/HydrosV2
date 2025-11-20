@@ -24,14 +24,27 @@ func ResolveDateRange(today, lastday, month bool, start, end string) (*time.Time
 		to = makeEndOfDay(from)
 
 	case lastday:
-		y := now.AddDate(0, 0, -1)
-		from = time.Date(y.Year(), y.Month(), y.Day(), 0, 0, 0, 0, loc)
-		to = makeEndOfDay(from)
+		// 7 hari ke belakang dari hari ini
+		from = time.Date(
+			now.AddDate(0, 0, -7).Year(),
+			now.AddDate(0, 0, -7).Month(),
+			now.AddDate(0, 0, -7).Day(),
+			0, 0, 0, 0,
+			loc,
+		)
+
+		// End of today
+		to = makeEndOfDay(now)
 
 	case month:
 		from = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, loc)
-		lastDay := from.AddDate(0, 1, -1)
+
+		// dapatkan hari terakhir di bulan ini
+		nextMonth := from.AddDate(0, 1, 0)
+		lastDay := nextMonth.AddDate(0, 0, -1)
+
 		to = makeEndOfDay(lastDay)
+
 
 	case start != "" && end != "":
 		s, err := time.ParseInLocation(layout, start, loc)

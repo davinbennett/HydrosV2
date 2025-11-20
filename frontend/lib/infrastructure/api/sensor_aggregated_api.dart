@@ -11,7 +11,14 @@ class SensorAggregatedApi {
 
   SensorAggregatedApi(this.ref) : _dio = ref.read(dioProvider);
 
-  Future<Map<String, dynamic>> getSensorAggregatedApi(String devideId, bool isToday, bool isLastDay, bool isThisMonth, String startDate, String endDate) async {
+  Future<Map<String, dynamic>> getSensorAggregatedApi(
+    String devideId,
+    bool isToday,
+    bool isLastDay,
+    bool isThisMonth,
+    String startDate,
+    String endDate,
+  ) async {
     try {
       final authState = ref.read(authProvider).value;
       String? accessToken;
@@ -30,7 +37,6 @@ class SensorAggregatedApi {
         'month': isThisMonth.toString(),
       };
 
-      // Jika user memilih date range
       if (startDate.isNotEmpty && endDate.isNotEmpty) {
         queryParams['start-date'] = startDate;
         queryParams['end-date'] = endDate;
@@ -50,13 +56,14 @@ class SensorAggregatedApi {
         final avgSoil = data['AvgSoilMoisture'] ?? 0.0;
 
         return {
-          'avg_temperature': avgTemperature, 
+          'avg_temperature': avgTemperature,
           'avg_humidity': avgHumidity,
-          'avg_soil': avgSoil
+          'avg_soil': avgSoil,
         };
       }
 
-      throw response.data['message'] ?? 'Failed to get data environmental averages.';
+      throw response.data['message'] ??
+          'Failed to get data environmental averages.';
     } on DioException catch (e) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:

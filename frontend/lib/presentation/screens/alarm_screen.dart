@@ -43,8 +43,8 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
         return "Once";
       case 2:
         return "Daily";
-      case 3:
-        return "Weekly";
+      // case 3:
+      //   return "Weekly";
       default:
         return "-";
     }
@@ -157,13 +157,13 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
                               style: TextStyle(fontSize: AppFontSize.s),
                             ),
                           ),
-                          DropdownMenuItem(
-                            value: 3,
-                            child: Text(
-                              'Weekly',
-                              style: TextStyle(fontSize: AppFontSize.s),
-                            ),
-                          ),
+                          // DropdownMenuItem(
+                          //   value: 3,
+                          //   child: Text(
+                          //     'Weekly',
+                          //     style: TextStyle(fontSize: AppFontSize.s),
+                          //   ),
+                          // ),
                         ],
                       ),
                     ],
@@ -437,6 +437,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
     TimeOfDay time,
     int duration,
     int repeatType,
+    bool isEnabled,
   ) async {
     if (!mounted) return;
     context.pop();
@@ -509,8 +510,10 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
         "schedule_time": formattedSchedule,
         "duration_on": duration,
         "repeat_type": repeatType,
-        "is_enabled": true,
+        "is_enabled": isEnabled,
       });
+
+      await ref.read(alarmProvider.notifier).loadAlarm(deviceId);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -542,8 +545,9 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
     final initialTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
 
     TimeOfDay selectedTime = initialTime;
-    int duration = alarm["duration"] ?? 5;
+    int duration = alarm["duration_on"] ?? 5;
     int repeatType = alarm["repeat_type"] ?? 1;
+    bool isEnabled = alarm["is_enabled"] ?? false;
 
     showModalBottomSheet(
       context: context,
@@ -638,13 +642,13 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
                               style: TextStyle(fontSize: AppFontSize.s),
                             ),
                           ),
-                          DropdownMenuItem(
-                            value: 3,
-                            child: Text(
-                              'Weekly',
-                              style: TextStyle(fontSize: AppFontSize.s),
-                            ),
-                          ),
+                          // DropdownMenuItem(
+                          //   value: 3,
+                          //   child: Text(
+                          //     'Weekly',
+                          //     style: TextStyle(fontSize: AppFontSize.s),
+                          //   ),
+                          // ),
                         ],
                       ),
                     ],
@@ -661,6 +665,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
                         selectedTime,
                         duration,
                         repeatType,
+                        isEnabled,
                       );
                     },
                   ),

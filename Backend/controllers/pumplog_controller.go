@@ -3,7 +3,6 @@ package controllers
 import (
 	"main/services"
 	"main/utils"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,13 +55,6 @@ func GetPumpLog(c *gin.Context) {
 	month := c.DefaultQuery("month", "false") == "true"
 	start := c.Query("start-date")
 	end := c.Query("end-date")
-	limitStr := c.DefaultQuery("limit", "10")
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		utils.BadRequestResponse(c, "Invalid limit value")
-		return
-	}
 
 	from, to, err := utils.ResolveDateRange(today, lastday, month, start, end)
 	if err != nil {
@@ -70,36 +62,13 @@ func GetPumpLog(c *gin.Context) {
 		return
 	}
 
-	result, errs := services.GetPumpLog(deviceID, from, to, limit)
+	result, errs := services.GetPumpLog(deviceID, from, to) // limit = 5
 	if errs != "" {
 		utils.InternalServerErrorResponse(c, errs)
 		return
 	}
 
 	utils.SuccessResponse(c, result)
-}
-
-func GetPumpLogDetails(c *gin.Context) {
-	deviceID := c.Param("device-id")
-	today := c.Query("today") == "true"
-	lastday := c.Query("lastday") == "true"
-	month := c.Query("month") == "true"
-	start := c.Query("start-date")
-	end := c.Query("end-date")
-
-	from, to, err := utils.ResolveDateRange(today, lastday, month, start, end)
-	if err != nil {
-		utils.InternalServerErrorResponse(c, "Something went wrong, please try again later.")
-		return
-	}
-
-	data, errs := services.GetPumpLogDetailList(deviceID, from, to)
-	if errs != "" {
-		utils.InternalServerErrorResponse(c, errs)
-		return
-	}
-
-	utils.SuccessResponse(c, data)
 }
 
 func DeletePumpLogByID(c *gin.Context) {
