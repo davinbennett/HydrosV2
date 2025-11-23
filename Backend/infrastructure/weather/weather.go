@@ -14,7 +14,7 @@ type WeatherAPIResponse struct {
 	} `json:"weather"`
 }
 
-func GetWeatherByCoords(lat, long float64) (string, string) {
+func GetWeatherByCoords(long, lat float64) (string, string) {
 	apiKey := os.Getenv("OWM_API_KEY")
 	if apiKey == "" {
 		return "", "Something went wrong. Please try again later."
@@ -44,5 +44,5 @@ func GetWeatherByCoords(lat, long float64) (string, string) {
 		return "", "Weather data is empty"
 	}
 
-	return result.Weather[0].Description, ""
+	return result.Weather[0].Main, ""
 }

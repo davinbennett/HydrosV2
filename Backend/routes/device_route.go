@@ -16,7 +16,7 @@ func DeviceRoute(rg *gin.RouterGroup) {
 		
 		r.GET("/:id/location", controllers.GetDeviceLocation)
 		r.GET("/:id/weather-status", controllers.GetWeatherStatus)
-		r.GET("/:id/plant", controllers.GetPlantInfo)
+		r.GET("/:id/plant-info", controllers.GetPlantInfo)
 		r.GET("/:id/soil-setting", controllers.GetSoilSetting)
 		
 		r.PATCH("/:id/plant", controllers.UpdatePlantInfo)

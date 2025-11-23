@@ -27,4 +27,12 @@ class PumplogUsecase {
       endDate,
     );
   }
+
+  Future<Map<String, dynamic>> getPumpUsageUsecase(String deviceId) async {
+    return await repository.getPumpUsageImpl(deviceId);
+  }
+
+  Future<Map<String, dynamic>> getLastWateredUsecase(String deviceId) async {
+    return await repository.getLastWateredImpl(deviceId);
+  }
 }

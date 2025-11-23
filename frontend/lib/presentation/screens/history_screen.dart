@@ -779,7 +779,6 @@ class _HistoryPageState extends ConsumerState<HistoryScreen> {
                                   context: context,
                                   showDragHandle: true,
                                   isScrollControlled: true,
-                                  backgroundColor: AppColors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.vertical(
                                       top: Radius.circular(AppRadius.rxl),
@@ -870,7 +869,6 @@ class _PumpHistoryItem extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSpacingSize.s),
       padding: EdgeInsets.all(AppSpacingSize.m),
       decoration: BoxDecoration(
-        color: AppColors.white,
         borderRadius: BorderRadius.circular(AppRadius.rm),
         border: Border.all(color: AppColors.borderOrange, width: 0.7),
       ),

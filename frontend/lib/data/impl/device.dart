@@ -31,4 +31,31 @@ class DeviceImpl implements DeviceRepository {
   Future<Map<String, dynamic>> getSoilSettingImpl(String devideId) {
     return api.getSoilSettingApi(devideId: devideId);
   }
+
+  @override
+  Future<String> addPlantImpl(
+    String? deviceId,
+    String? plantName,
+    String? progressPlan,
+    String? longitude,
+    String? latitude,
+    String? location,
+  ){
+    return api.addPlantApi(deviceId, plantName, progressPlan, longitude, latitude, location);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getLocationImpl(String deviceId) {
+    return api.getLocationApi(deviceId);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getWeatherImpl(String devideId) {
+    return api.getWeatherApi(devideId);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getPlantInfoImpl(String devideId) {
+    return api.getPlantInfoApi(devideId);
+  }
 }

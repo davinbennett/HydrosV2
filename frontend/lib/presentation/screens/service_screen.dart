@@ -14,7 +14,6 @@ import '../../core/themes/font_weight.dart';
 import '../../core/themes/radius_size.dart';
 import '../../core/themes/spacing_size.dart';
 import '../../core/utils/datetime_format_lastpump.dart';
-import '../../core/utils/logger.dart';
 import '../../core/utils/media_query_helper.dart';
 import '../../infrastructure/local/secure_storage.dart';
 import '../providers/alarm_provider.dart';

@@ -8,4 +8,6 @@ abstract class PumplogRepository {
     String startDate,
     String endDate,
   );
+  Future<Map<String, dynamic>> getPumpUsageImpl(String devideId);
+  Future<Map<String, dynamic>> getLastWateredImpl(String devideId);
 }

@@ -65,6 +65,7 @@ flutter:
     - lib/assets/images/logo_hydros.png
     - lib/assets/images/home_top.png
     - lib/assets/images/no_plant_add.png
+    - lib/assets/images/gemini.png
     - lib/assets/icons/google.svg
     - .env
   fonts:

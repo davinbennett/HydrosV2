@@ -153,4 +153,118 @@ class PumplogApi {
       throw 'An unknown error occurred.';
     }
   }
+  
+  Future<Map<String, dynamic>> getPumpUsageApi(
+    String devideId,
+  ) async {
+    try {
+      final authState = ref.read(authProvider).value;
+      String? accessToken;
+
+      if (authState is AuthAuthenticated) {
+        accessToken = authState.user.accessToken;
+      }
+
+      if (accessToken == null) {
+        throw 'Unauthorized: Token not found.';
+      }
+
+
+      final response = await _dio.get(
+        '/pumplog/$devideId/pump-usage',
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+
+      if (response.data['code'] == 200) {
+        final data = response.data['data'] ?? {};
+
+        final pumpUsage = (data['pump_usage'] ?? 0);
+
+        return {
+          'pump_usage': pumpUsage,
+        };
+      }
+
+      throw response.data ?? 'Failed to get data pump usage.';
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          throw 'Connection timeout. Please try again.';
+
+        case DioExceptionType.connectionError:
+          throw 'Unable to connect to the server. Please check your internet connection.';
+
+        case DioExceptionType.badResponse:
+          final message = e.response?.data;
+          if (message is String && message.isNotEmpty) {
+            throw message;
+          }
+          throw 'Server responded with an error.';
+
+        default:
+          throw e.message ?? 'An unknown server error occurred.';
+      }
+    } catch (e) {
+      throw 'An unknown error occurred.';
+    }
+  }
+
+  Future<Map<String, dynamic>> getLastWateredApi(
+    String devideId,
+  ) async {
+    try {
+      final authState = ref.read(authProvider).value;
+      String? accessToken;
+
+      if (authState is AuthAuthenticated) {
+        accessToken = authState.user.accessToken;
+      }
+
+      if (accessToken == null) {
+        throw 'Unauthorized: Token not found.';
+      }
+
+
+      final response = await _dio.get(
+        '/pumplog/$devideId/last-watered',
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+
+      if (response.data['code'] == 200) {
+        final data = response.data['data'] ?? {};
+
+        final lastWatered = (data['last_watered'] ?? 0);
+
+        return {
+          'last_watered': lastWatered,
+        };
+      }
+
+      throw response.data ?? 'Failed to get data last watered.';
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          throw 'Connection timeout. Please try again.';
+
+        case DioExceptionType.connectionError:
+          throw 'Unable to connect to the server. Please check your internet connection.';
+
+        case DioExceptionType.badResponse:
+          final message = e.response?.data;
+          if (message is String && message.isNotEmpty) {
+            throw message;
+          }
+          throw 'Server responded with an error.';
+
+        default:
+          throw e.message ?? 'An unknown server error occurred.';
+      }
+    } catch (e) {
+      throw 'An unknown error occurred.';
+    }
+  }
 }

@@ -30,4 +30,14 @@ class PumpLogImpl implements PumplogRepository {
       endDate,
     );
   }
+
+  @override
+  Future<Map<String, dynamic>> getPumpUsageImpl(String devideId) {
+    return api.getPumpUsageApi(devideId);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getLastWateredImpl(String devideId) {
+    return api.getLastWateredApi(devideId);
+  }
 }

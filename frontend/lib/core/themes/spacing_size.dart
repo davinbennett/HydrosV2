@@ -1,5 +1,6 @@
 class AppSpacingSize {
-  static double get xs => 6;
+  static double get xxs => 4;
+  static double get xs => 6;  //fix
   static double get s => 12; // fix
   static double get m => 14; // fix
   static double get l => 18; // fix

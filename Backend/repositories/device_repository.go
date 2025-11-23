@@ -3,7 +3,7 @@ package repositories
 import (
 	"main/config"
 	"main/models"
-
+	"time"
 )
 
 func GetAllDeviceIDs() ([]string, string) {
@@ -58,7 +58,7 @@ func GetCoords(deviceID string) (float64, float64, string) {
 	return device.Longitude, device.Latitude, ""
 }
 
-func AddPlant(deviceID, plantName string, progressPlan int, latitude, longitude float64, location string) string {
+func AddPlant(deviceID, plantName string, progressPlan int, latitude, longitude float64, location string, progressPlanDate time.Time) string {
 	var device models.Device
 
 	if err := config.PostgresDB.Where("id = ?", deviceID).First(&device).Error; err != nil {
@@ -67,6 +67,7 @@ func AddPlant(deviceID, plantName string, progressPlan int, latitude, longitude 
 
 	device.PlantName = &plantName
 	device.ProgressPlan = progressPlan
+	device.ProgressPlanDate = progressPlanDate.Local()
 	device.Latitude = latitude
 	device.Longitude = longitude
 	device.Location = location
@@ -79,14 +80,33 @@ func AddPlant(deviceID, plantName string, progressPlan int, latitude, longitude 
 
 func GetPlantInfo(deviceID string) (string, int, int, string) {
 	var device models.Device
+
 	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
-		return "", 0.0, 0.0, "Device not found."
+		return "", 0, 0, "Device not found."
 	}
+
 	if device.PlantName == nil {
 		return "", device.ProgressNow, device.ProgressPlan, ""
 	}
-	return *device.PlantName, device.ProgressNow, device.ProgressPlan, ""
+
+	now := time.Now().Local()
+	startDate := device.ProgressPlanDate.AddDate(0, 0, -device.ProgressPlan*7)
+	diffDays := int(now.Sub(startDate).Hours() / 24)
+	progressNow := diffDays / 7
+	
+	if progressNow < 0 {
+		progressNow = 0
+	}
+	if progressNow > device.ProgressPlan {
+		progressNow = device.ProgressPlan
+	}
+
+	device.ProgressNow = progressNow
+	config.PostgresDB.Save(&device)
+
+	return *device.PlantName, progressNow, device.ProgressPlan, ""
 }
+
 
 func UpdatePlant(deviceID string, plantName, location string, progressPlan int, latitude, longitude float64) string {
 	var device models.Device

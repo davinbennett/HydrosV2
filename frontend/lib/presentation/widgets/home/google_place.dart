@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/core/themes/colors.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/place_type.dart';
@@ -8,18 +7,21 @@ import 'package:google_places_flutter/model/prediction.dart';
 import '../../../core/themes/font_size.dart';
 import '../../../core/themes/radius_size.dart';
 import '../../../core/themes/spacing_size.dart';
+import '../../../infrastructure/google_place/config.dart';
 
 class LocationAutoCompleteWidget extends StatefulWidget {
   final TextEditingController controller;
   final Function(Prediction)? onPlaceSelected;
   final EdgeInsets padding;
   final String? Function(String?)? validator;
+  final Function(String lat, String lng)? onLatLngSelected;
 
   const LocationAutoCompleteWidget({
     super.key,
     required this.controller,
     this.onPlaceSelected,
     this.padding = const EdgeInsets.symmetric(vertical: 8), 
+    this.onLatLngSelected,
     this.validator,
   });
 
@@ -40,7 +42,6 @@ class _LocationAutoCompleteWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final apiKey = dotenv.env['GOOGLE_PLACE_API'];
 
     return Padding(
       padding: widget.padding,
@@ -55,7 +56,7 @@ class _LocationAutoCompleteWidgetState
             ),
             textEditingController: widget.controller,
             focusNode: _focusNode,
-            googleAPIKey: apiKey ?? '',
+            googleAPIKey: apiKeyPlace ?? '',
             debounceTime: 400,
             countries: const ["id"],
             isLatLngRequired: true,
@@ -104,8 +105,19 @@ class _LocationAutoCompleteWidgetState
               ),
             ),
             getPlaceDetailWithLatLng: (prediction) {
-              debugPrint("📍 LatLng: ${prediction.lat}, ${prediction.lng}");
+              widget.controller.text = prediction.description ?? '';
+
+              if (widget.onLatLngSelected != null &&
+                  prediction.lat != null &&
+                  prediction.lng != null) {
+                widget.onLatLngSelected!(prediction.lat!, prediction.lng!);
+              }
+
+              if (widget.onPlaceSelected != null) {
+                widget.onPlaceSelected!(prediction);
+              }
             },
+
             itemClick: (Prediction prediction) {
               widget.controller.text = prediction.description ?? '';
               widget.controller.selection = TextSelection.fromPosition(

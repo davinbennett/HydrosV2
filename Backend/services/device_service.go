@@ -6,6 +6,7 @@ import (
 	"main/infrastructure/mqtt"
 	"main/infrastructure/weather"
 	"main/repositories"
+	"time"
 )
 
 func ControlPumpSwitch(deviceID string, isOn bool) string {
@@ -80,7 +81,11 @@ func GetWeatherStatus(deviceID string) (string, string) {
 }
 
 func AddPlantInfo(deviceID, plantName string, progressPlan int, lat, long float64, location string) string {
-	return repositories.AddPlant(deviceID, plantName, progressPlan, lat, long, location)
+	nowLocal := time.Now().Local()
+
+    // progress plan = jumlah minggu → 7 hari * progressPlan
+    progressPlanDate := nowLocal.AddDate(0, 0, progressPlan*7)
+	return repositories.AddPlant(deviceID, plantName, progressPlan, lat, long, location, progressPlanDate)
 }
 
 func GetPlantInfo(deviceID string) (string, int, int, string) {

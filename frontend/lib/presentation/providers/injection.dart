@@ -29,12 +29,14 @@ import '../../domain/repositories/alarm.dart';
 import '../../domain/repositories/pumplog.dart';
 import '../../domain/repositories/sensor.dart';
 import '../../domain/usecase/alarm.dart';
+import '../../domain/usecase/device/device.dart';
 import '../../domain/usecase/pumplog.dart';
 import '../../domain/usecase/sensor_aggregated.dart';
 import '../../infrastructure/api/alarm_api.dart';
 import '../../infrastructure/api/pumplog_api.dart';
 import '../../infrastructure/api/sensor_aggregated_api.dart';
 import '../controllers/alarm_controller.dart';
+import '../controllers/home_controller.dart';
 import '../controllers/service_controller.dart';
 
 // API & Firebase service
@@ -139,6 +141,11 @@ final sensorAggregatedUsecaseProvider = Provider<SensorAggregatedUsecase>((ref) 
   final repo = ref.read(sensorAggregatedRepositoryProvider);
   return SensorAggregatedUsecase(repo);
 });
+final deviceUsecaseProvider = Provider<DeviceUsecase>((ref) {
+  final repo = ref.read(deviceRepositoryProvider);
+  return DeviceUsecase(repo);
+});
+
 
 // === controller ===
 final loginControllerProvider = Provider<LoginController>((ref) {
@@ -213,5 +220,14 @@ final historyControllerProvider = Provider<HistoryController>((ref) {
     sensorAggregatedUsecase: sensorAggregatedUsecase,
     pumplogUsecase: pumplogUsecase,
     ref: ref,
+  );
+});
+final homeControllerProvider = Provider<HomeController>((ref) {
+  final deviceUsecase = ref.read(deviceUsecaseProvider);
+  final pumplogUsecase = ref.read(pumplogUsecaseProvider);
+  return HomeController(
+    deviceUsecase,
+    ref,
+    pumplogUsecase
   );
 });

@@ -15,11 +15,9 @@ import '../../core/utils/media_query_helper.dart';
 import '../../core/utils/toIsoWithOffset.dart';
 import '../../infrastructure/local/secure_storage.dart';
 import '../providers/alarm_provider.dart';
-import '../providers/device_provider.dart';
 import '../providers/injection.dart';
 import '../providers/websocket/device_status_provider.dart';
-import '../widgets/alarm/app_bar.dart' hide AppBarType;
-import '../widgets/global/app_bar.dart';
+import '../widgets/alarm/app_bar.dart';
 import '../widgets/global/button.dart';
 import '../widgets/global/loading.dart';
 

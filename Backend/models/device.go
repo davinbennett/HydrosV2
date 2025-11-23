@@ -14,6 +14,7 @@ type Device struct {
 	Location         string
 	ProgressPlan     int `gorm:"default:0"`
 	ProgressNow      int `gorm:"default:0"`
+	ProgressPlanDate time.Time
 	PlantName        *string
 	Users            []User `gorm:"many2many:user_devices;joinForeignKey:DeviceID;joinReferences:UserID"`
 	PumpLogs         []PumpLog
