@@ -4,7 +4,6 @@ import (
 	"log"
 	"main/config"
 	"net/http"
-
 )
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -29,9 +28,11 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}()
 
 		for {
-			if _, _, err := conn.ReadMessage(); err != nil {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
 				break
 			}
 		}
 	}()
+
 }

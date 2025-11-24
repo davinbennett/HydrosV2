@@ -80,9 +80,8 @@ class _HomePageState extends ConsumerState<HomeScreen> {
 
     Future.microtask(() async {
       deviceId = await SecureStorage.getDeviceId();
-      await _loadLocalStates();
-      await _initWebSocketIfPaired();
-
+      
+      
       final hasPlant = await SecureStorage.getHasPlant();
 
       if (hasPlant) {
@@ -135,9 +134,9 @@ class _HomePageState extends ConsumerState<HomeScreen> {
         deviceId,
         nameController.text,
         plantingWeeks.toInt().toString(),
-        selectedLng!,
-        selectedLat!,
-        selectedPlace!,
+        selectedLng,
+        selectedLat,
+        selectedPlace,
       );
 
       setState(() {
@@ -449,33 +448,6 @@ class _HomePageState extends ConsumerState<HomeScreen> {
       );
     }
     return const SizedBox.shrink();
-  }
-
-  Future<void> _loadLocalStates() async {
-    try {
-      await ref.read(sensorProvider.notifier).loadFromLocal();
-      await ref.read(pumpStatusProvider.notifier).loadFromLocal();
-      await ref.read(deviceStatusProvider.notifier).loadFromLocal();
-
-      logger.i("💾 Local state loaded dari SharedPreferences");
-    } catch (e, st) {
-      logger.e("❌ Gagal load local state: $e", error: e, stackTrace: st);
-    }
-  }
-
-  Future<void> _initWebSocketIfPaired() async {
-    try {
-      final deviceId = await SecureStorage.getDeviceId();
-
-      if (deviceId != null && deviceId.isNotEmpty) {
-        Future.microtask(() => ref.read(websocketManagerProvider).init());
-        logger.i("🌐 WebSocket initialized for device: $deviceId");
-      } else {
-        logger.w("⚠️ Device belum terpair, WebSocket tidak dijalankan");
-      }
-    } catch (e, st) {
-      logger.e("❌ Gagal inisialisasi WebSocket: $e", error: e, stackTrace: st);
-    }
   }
 
   @override

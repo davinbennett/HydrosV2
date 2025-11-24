@@ -1,12 +1,12 @@
 import 'package:intl/intl.dart';
 
 String formatLastPumped(String? dateStr) {
-  if (dateStr == null || dateStr.isEmpty) return '-';
+  if (dateStr == null || dateStr.isEmpty || dateStr == '-') return '-';
 
   final parsed = DateTime.tryParse(dateStr);
   if (parsed == null) return '-';
 
-  final dt = parsed.toLocal(); // ← PENTING!
+  final dt = parsed.toLocal();
 
   final month = DateFormat("MMM").format(dt); // Jul
   final day = dt.day; // 5

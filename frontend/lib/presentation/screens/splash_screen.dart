@@ -9,6 +9,13 @@ import 'package:frontend/presentation/providers/device_provider.dart';
 import 'package:frontend/presentation/states/auth_state.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/utils/logger.dart';
+import '../../infrastructure/websocket/main_websocket.dart';
+import '../providers/websocket/device_status_provider.dart';
+import '../providers/websocket/main_websocket_provider.dart';
+import '../providers/websocket/pump_status_provider.dart';
+import '../providers/websocket/sensor_provider.dart';
+
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,6 +27,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
+
+    Future.microtask(() async {
+      await _initWebSocketIfPaired();
+      await _loadLocalStates();
+    });
 
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
@@ -66,6 +78,34 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         error: (_, _) => context.go('/login'),
       );
     });
+  }
+
+  Future<void> _loadLocalStates() async {
+    try {
+      await ref.read(sensorProvider.notifier).loadFromLocal();
+      await ref.read(pumpStatusProvider.notifier).loadFromLocal();
+      await ref.read(deviceStatusProvider.notifier).loadFromLocal();
+
+      logger.i("💾 Local state loaded dari SharedPreferences");
+    } catch (e, st) {
+      logger.e("❌ Gagal load local state: $e", error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _initWebSocketIfPaired() async {
+    try {
+      final deviceId = await SecureStorage.getDeviceId();
+
+      if (deviceId != null && deviceId.isNotEmpty) {
+        ref.read(websocketStatusProvider.notifier).state = false;
+        Future.microtask(() => ref.read(websocketManagerProvider).init());
+        logger.i("🌐 WebSocket initialized for device: $deviceId");
+      } else {
+        logger.w("⚠️ Device belum terpair, WebSocket tidak dijalankan");
+      }
+    } catch (e, st) {
+      logger.e("❌ Gagal inisialisasi WebSocket: $e", error: e, stackTrace: st);
+    }
   }
 
   @override

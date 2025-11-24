@@ -40,10 +40,9 @@ Future<void> initWebsocket(Ref ref) async {
     _connecting = false;
     _retryCount = 0;
 
-    ref.read(websocketStatusProvider.notifier).state = true;
     logger.i("[WS] Connected ✅");
 
-    _startPing();
+    _startPing(ref);
     _listen(ref);
   } catch (e) {
     _connecting = false;
@@ -77,13 +76,14 @@ void _listen(Ref ref) {
           case 'device_status':
             handleDeviceStatus(ref, json);
             break;
-          case 'update_enabled': 
+          case 'update_enabled':
             handleUpdateEnabled(ref, json);
             break;
           default:
             logger.w("[WS] Unknown type: $type");
         }
       } catch (e) {
+        ref.read(websocketStatusProvider.notifier).state = false;
         logger.e("[WS] Parse error: $e");
       }
     },
@@ -100,26 +100,31 @@ void _listen(Ref ref) {
   );
 }
 
+
 void _scheduleReconnect(Ref ref) {
   _stopPing();
+
+  ref.read(websocketStatusProvider.notifier).state = false;
+
   if (_reconnectTimer?.isActive ?? false) return;
 
   _retryCount++;
-  final delay = Duration(seconds: (2 << (_retryCount - 1)).clamp(1, 10));
+  final delay = Duration(seconds: (2 << (_retryCount - 1)).clamp(1, 5));
   logger.w("[WS] Reconnecting in ${delay.inSeconds}s...");
 
   _reconnectTimer = Timer(delay, () async {
-    _channel?.sink.close(status.goingAway);
+    _channel?.sink.close(1000);
     _channel = null;
     await initWebsocket(ref);
   });
 }
 
-void _startPing() {
+void _startPing(Ref ref) async {
   _pingTimer?.cancel();
+
   _pingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
     try {
-      _channel?.sink.add(jsonEncode({'type': 'ping'}));
+      logger.i("[WS] PING To Backend");
     } catch (_) {}
   });
 }

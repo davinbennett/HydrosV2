@@ -36,6 +36,9 @@ const char *mqtt_username = "";
 const char *mqtt_password = "";
 const int mqtt_port = 1883;
 
+unsigned long lastStatusDeviceSent = 0;
+const long statusDeviceInterval = 1500;
+
 String device_id = "";
 
 bool ledGreenOn = false;
@@ -130,10 +133,10 @@ enum AlarmAction
 struct Alarm
 {
   String id;
-  String time;               // format "HH:MM"
+  String time;    // format "HH:MM"
   int durationOn; // menit
   int repeatType; // 1=once, 2=daily, 3=weekly
-  int repeatDays;    // bitmask (0–127) untuk weekly
+  int repeatDays; // bitmask (0–127) untuk weekly
 };
 
 std::vector<Alarm> alarms;
@@ -244,7 +247,7 @@ void publishDeleteAlarm(const String &id)
 
   char payload[256];
   serializeJson(doc, payload, sizeof(payload));
-  
+
   pubSubClient.publish(pub_alarmTopic.c_str(), payload);
 
   Serial.print("Published alarm delete: ");
@@ -268,7 +271,7 @@ void printAlarms()
 
 void deleteAlarm(const String &id)
 {
-  
+
   for (auto it = alarms.begin(); it != alarms.end(); ++it)
   {
     if (it->id == id)
@@ -358,11 +361,11 @@ void handleSubscribeAllDataMqtt(char *topic, byte *payload, unsigned int length)
     Serial.println("\n============================\n");
   }
 
-
   // =========================
   // ALARM
   // =========================
-  else if (strcmp(topic, sub_alarmTopic.c_str()) == 0) {
+  else if (strcmp(topic, sub_alarmTopic.c_str()) == 0)
+  {
     int action = doc["action"].as<int>(); // add, update, delete
     String alarmId = doc["alarm_id"].as<String>();
 
@@ -415,7 +418,8 @@ void handleSubscribeAllDataMqtt(char *topic, byte *payload, unsigned int length)
     bool action = doc["is_enabled"].as<bool>();
     String alarmId = doc["alarm_id"].as<String>();
 
-    if (action == false){
+    if (action == false)
+    {
       deleteAlarm(alarmId);
     }
 
@@ -475,38 +479,34 @@ void sendConnectionStatus(bool wifiConnected, bool mqttConnected)
   else
     newState = STABLE;
 
-  // hanya kirim kalau status berubah
-  if (newState != connectionState)
+  connectionState = newState;
+
+  String statusStr;
+  switch (connectionState)
   {
-    connectionState = newState;
-
-    String statusStr;
-    switch (connectionState)
-    {
-    case DISCONNECTED:
-      statusStr = "disconnected";
-      break;
-    case UNSTABLE:
-      statusStr = "unstable";
-      break;
-    case STABLE:
-      statusStr = "stable";
-      break;
-    }
-
-    String willTopic = "from-esp/" + device_id + "/status-device";
-
-    JsonDocument doc;
-    doc["type"] = 3;
-    doc["device_id"] = device_id;
-    doc["status"] = statusStr;
-
-    String payload;
-    serializeJson(doc, payload);
-    pubSubClient.publish(willTopic.c_str(), payload.c_str(), true);
-
-    Serial.printf("Connection State Changed → %s\n", statusStr.c_str());
+  case DISCONNECTED:
+    statusStr = "disconnected";
+    break;
+  case UNSTABLE:
+    statusStr = "unstable";
+    break;
+  case STABLE:
+    statusStr = "stable";
+    break;
   }
+
+  String willTopic = "from-esp/" + device_id + "/status-device";
+
+  JsonDocument doc;
+  doc["type"] = 3;
+  doc["device_id"] = device_id;
+  doc["status"] = statusStr;
+
+  String payload;
+  serializeJson(doc, payload);
+  pubSubClient.publish(willTopic.c_str(), payload.c_str(), true);
+
+  Serial.printf("Connection State Changed → %s\n", statusStr.c_str());
 }
 
 void reconnectMQTT()
@@ -566,9 +566,6 @@ void reconnectMQTT()
     pubSubClient.subscribe(sub_soilTopic.c_str());
     pubSubClient.subscribe(sub_alarmTopic.c_str());
     pubSubClient.subscribe(sub_enabledAlarmTopic.c_str());
-
-    // Kirim status stable langsung
-    sendConnectionStatus(true, true);
   }
   else
   {
@@ -692,7 +689,7 @@ bool tryConnectToSavedWiFi()
       lcd.print("Waiting for");
       lcd.setCursor(2, 1);
       lcd.print("Time Sync...");
-      
+
       struct tm timeinfo;
       int retry = 0;
       const int maxRetry = 20;
@@ -803,8 +800,6 @@ void connectWifi()
         lcd.print("WiFi Connected!");
         countReconnect = 0;
         wasConnected = true;
-
-        sendConnectionStatus(true, pubSubClient.connected());
       }
       else if (countReconnect >= MAX_RETRY)
       {
@@ -826,7 +821,6 @@ void connectWifi()
             String pass = WiFi.psk();
             addWiFiToList(ssid, pass);
             wasConnected = true;
-            sendConnectionStatus(true, pubSubClient.connected());
           }
           else
           {
@@ -841,7 +835,6 @@ void connectWifi()
         {
           Serial.printf("✅ Connected to %s\n", WiFi.SSID().c_str());
           wasConnected = true;
-          sendConnectionStatus(true, pubSubClient.connected());
         }
 
         countReconnect = 0;
@@ -853,11 +846,10 @@ void connectWifi()
     // WiFi stabil
     wasConnected = true;
   }
-
-  sendConnectionStatus(WiFi.status() == WL_CONNECTED, pubSubClient.connected());
 }
 
-void readSensors(){
+void readSensors()
+{
   float humidity = dht.readHumidity();
   float moisture = analogRead(soil);
   float temperature = dht.readTemperature();
@@ -870,7 +862,8 @@ void readSensors(){
   currentMoisturePercent = moisturePercent;
 }
 
-void lcdDisplay(){
+void lcdDisplay()
+{
   if (millis() - previousDisplayMillis >= displayInterval)
   {
     switch (currentState)
@@ -946,7 +939,7 @@ bool shouldTriggerAlarm(const Alarm &a, int currentDay)
 
 void setup()
 {
-  
+
   Serial.begin(115200);
 
   lcd.init();
@@ -1065,8 +1058,16 @@ void loop()
     pubSubClient.loop();
   }
 
-  // Selalu update status koneksi realtime
-  sendConnectionStatus(WiFi.status() == WL_CONNECTED, pubSubClient.connected());
+  // Selalu update status koneksi tiap 1.5s
+  if (millis() - lastStatusDeviceSent >= statusDeviceInterval)
+  {
+    lastStatusDeviceSent = millis();
+
+    bool wifiOK = WiFi.status() == WL_CONNECTED;
+    bool mqttOK = pubSubClient.connected();
+
+    sendConnectionStatus(wifiOK, mqttOK);
+  }
 
   int btn = digitalRead(button);
   mean = (soilStart + soilEnd) / 2.0;
@@ -1093,7 +1094,8 @@ void loop()
     btn = digitalRead(button);
 
     // --- DEVICE BUTTON ---
-    if (btn != lastBtnState) {
+    if (btn != lastBtnState)
+    {
       if (btn == 0)
       { // ON
         if (!pumpIsOn)
@@ -1117,7 +1119,8 @@ void loop()
           pumpIsOn = false;
           manualOverride = true;
           controlBy = DEVICE;
-          if (switchOn) {
+          if (switchOn)
+          {
             switchOn = false;
           }
 
@@ -1130,22 +1133,23 @@ void loop()
     }
   }
 
-  // --- SOIL AUTO --- 
-  if (!manualOverride) {
+  // --- SOIL AUTO ---
+  if (!manualOverride)
+  {
     if (currentMoisturePercent < soilStart && !pumpIsOn) // nyala kalo soil dibawah soilStart
-    { 
-      Serial.println("Pompa ON by SOIL"); 
-      controlBy = SOIL; 
-      ledGreenOn = true; 
-      ledRedOn = false; 
-    } 
-    
+    {
+      Serial.println("Pompa ON by SOIL");
+      controlBy = SOIL;
+      ledGreenOn = true;
+      ledRedOn = false;
+    }
+
     // auto mati kalo udah nyala dan soil diatas mean
-    else if (pumpIsOn && controlBy == SOIL && currentMoisturePercent >= mean) 
+    else if (pumpIsOn && controlBy == SOIL && currentMoisturePercent >= mean)
     {
       Serial.println("Pompa OFF by SOIL");
       ledGreenOn = false;
-      ledRedOn = true; 
+      ledRedOn = true;
     }
   }
 

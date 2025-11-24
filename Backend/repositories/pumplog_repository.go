@@ -22,7 +22,7 @@ func GetLastWateredTime(deviceID string) (*models.PumpLog, string) {
 	var pumpLog models.PumpLog
 	if err := config.PostgresDB.
 		Where("device_id = ?", deviceID).
-		Order("updated_at DESC").
+		Order("created_at DESC").
 		First(&pumpLog).Error; err != nil {
 		return nil, "Failed to get last watered time."
 	}
@@ -49,7 +49,7 @@ func FindPumpLog(deviceID string, from, to *time.Time) ([]models.PumpLog, string
 		query = query.Where("start_time >= ? AND end_time <= ?", *from, *to)
 	}
 
-	if err := query.Order("start_time DESC").Find(&logs).Error; err != nil {
+	if err := query.Order("created_at DESC").Find(&logs).Error; err != nil {
 		return nil, "Failed to get pump logs. Please try again later."
 	}
 	return logs, ""

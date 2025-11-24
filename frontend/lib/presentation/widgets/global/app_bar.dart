@@ -7,6 +7,7 @@ import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/themes/colors.dart';
+import '../../../infrastructure/websocket/main_websocket.dart';
 import '../../providers/websocket/device_status_provider.dart';
 
 enum AppBarType { main, back, withoutNotif }
@@ -27,11 +28,11 @@ class AppBarWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final device = ref.watch(deviceStatusProvider);
+    final ws = ref.watch(websocketStatusProvider);
 
     Color statusColor;
-    switch (device.status?.toLowerCase()) {
-      case 'stable':
+    switch (ws) {
+      case true:
         statusColor = AppColors.success;
         break;
       default:

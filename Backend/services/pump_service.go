@@ -17,7 +17,7 @@ func GetLastWatered(deviceID string) (*time.Time, string) {
 		return nil, err
 	}
 
-	return &pumpLog.UpdatedAt, ""
+	return &pumpLog.CreatedAt, ""
 }
 
 func GetPumpStartTimes(deviceID string) ([]map[string]any, string) {
@@ -102,7 +102,7 @@ func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]any,
 
 	soilMin := logs[0].SoilBefore
 	soilMax := logs[0].SoilBefore
-	lastPumped := logs[0].StartTime
+	lastPumped := logs[0].CreatedAt
 
 	for _, log := range logs {
 		if log.SoilBefore < soilMin {
@@ -111,8 +111,8 @@ func GetPumpQuickActivity(deviceID string, from, to *time.Time) (map[string]any,
 		if log.SoilBefore > soilMax {
 			soilMax = log.SoilBefore
 		}
-		if log.StartTime.After(*lastPumped) {
-			lastPumped = log.StartTime
+		if log.CreatedAt.After(lastPumped) {
+			lastPumped = log.CreatedAt
 		}
 	}
 
