@@ -3,6 +3,7 @@ package repositories
 import (
 	"main/config"
 	"main/models"
+	"strconv"
 	"time"
 )
 
@@ -34,12 +35,15 @@ func UpdatePumpStatus(deviceID string, isOn bool) string {
 	return ""
 }
 
-func GetLocation(deviceID string) (string, string) {
+func GetLocation(deviceID string) (string, string, string, string) {
 	var device models.Device
 	if err := config.PostgresDB.First(&device, "id = ?", deviceID).Error; err != nil {
-		return "", "Device not found."
+		return "", "", "", "Device not found."
 	}
-	return device.Location, ""
+	lng := strconv.FormatFloat(device.Longitude, 'f', 6, 64)
+	lat := strconv.FormatFloat(device.Latitude, 'f', 6, 64)
+
+	return device.Location, lng, lat, ""
 }
 
 func GetSoilSetting(deviceID string) (float64, float64, string) {

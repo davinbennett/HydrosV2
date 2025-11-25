@@ -12,6 +12,14 @@ abstract class DeviceRepository {
     String? latitude,
     String? location,
   );
+  Future<String> editPlantImpl(
+    String? deviceId,
+    String? plantName,
+    String? progressPlan,
+    String? longitude,
+    String? latitude,
+    String? location,
+  );
   Future<Map<String, dynamic>> getLocationImpl(String deviceId);
   Future<Map<String, dynamic>> getWeatherImpl(String deviceId);
   Future<Map<String, dynamic>> getPlantInfoImpl(String deviceId);

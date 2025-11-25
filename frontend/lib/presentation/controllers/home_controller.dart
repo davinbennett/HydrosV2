@@ -30,6 +30,25 @@ class HomeController extends StateNotifier<Map<dynamic, dynamic>> {
     );
     return data;
   }
+  
+  Future<String> editPlantController(
+    String? deviceId,
+    String? plantName,
+    String? progressPlan,
+    String? longitude,
+    String? latitude,
+    String? location,
+  ) async {
+    final data = await deviceUsecase.editPlantUsecase(
+      deviceId,
+      plantName,
+      progressPlan,
+      longitude,
+      latitude,
+      location,
+    );
+    return data;
+  }
 
   Future<Map<String, dynamic>> getPlantAssistantController(
     String deviceId,
@@ -55,6 +74,8 @@ class HomeController extends StateNotifier<Map<dynamic, dynamic>> {
 
       return {
         'location': location['location'] ?? '',
+        'long': location['long'] ?? '',
+        'lat': location['lat'] ?? '',
         'weather': weather['weather-status'] ?? '',
         'plant_name': plantInfo['plant_name'] ?? '',
         'progress_now': plantInfo['progress_now'] ?? 0,

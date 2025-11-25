@@ -20,9 +20,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import '../../core/utils/validator.dart';
 import '../providers/injection.dart';
-import '../providers/websocket/device_status_provider.dart';
-import '../providers/websocket/main_websocket_provider.dart';
-import '../providers/websocket/pump_status_provider.dart';
 import '../providers/websocket/sensor_provider.dart';
 import '../widgets/global/loading.dart';
 import '../widgets/global/text_form_field.dart';
@@ -49,8 +46,8 @@ class _HomePageState extends ConsumerState<HomeScreen> {
     logger.i('⏱️ Paired At: $pairedAt');
   }
 
-  final nameController = TextEditingController();
-  final locationController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController locationController = TextEditingController();
 
   String location = '-';
   String weather = '-';
@@ -58,7 +55,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
   String selectedLat = '';
   String selectedLng = '';
   String plantName = '-';
-  double plantingWeeks = 4;
+  double plantingWeeks = 0;
   String lastWatered = '--:--:--';
   int pumpUsage = 0;
 
@@ -67,8 +64,8 @@ class _HomePageState extends ConsumerState<HomeScreen> {
 
   final formKey = GlobalKey<FormState>();
 
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
   bool isLoadingInit = true;
 
@@ -80,8 +77,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
 
     Future.microtask(() async {
       deviceId = await SecureStorage.getDeviceId();
-      
-      
+
       final hasPlant = await SecureStorage.getHasPlant();
 
       if (hasPlant) {
@@ -99,7 +95,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
   Future<void> _loadPlantAssistant(String deviceId) async {
     try {
       final homeController = ref.read(homeControllerProvider);
-      final data = await homeController.getPlantAssistantController(deviceId!);
+      final data = await homeController.getPlantAssistantController(deviceId);
       setState(() {
         location = data['location'];
         weather = data['weather'];
@@ -108,6 +104,12 @@ class _HomePageState extends ConsumerState<HomeScreen> {
         plantName = data['plant_name'];
         lastWatered = data['last_watered'];
         pumpUsage = data['pump_usage'];
+        nameController.text = data['plant_name'];
+        locationController.text = data['location'];
+        plantingWeeks = data['progress_plan'].toDouble();
+        selectedLat = data['lat'];
+        selectedLng = data['long'];
+        selectedPlace = data['location'];
       });
     } catch (e) {
       if (!mounted) return;
@@ -222,7 +224,8 @@ class _HomePageState extends ConsumerState<HomeScreen> {
                             label: plantingWeeks.round().toString(),
                             activeColor: AppColors.orange,
                             onChanged: (v) {
-                              setModalState(() => plantingWeeks = v);
+                              final rounded = v.round().toDouble();
+                              setModalState(() => plantingWeeks = rounded);
                             },
                           ),
 
@@ -258,6 +261,187 @@ class _HomePageState extends ConsumerState<HomeScreen> {
                   child: ButtonWidget(
                     text: 'Save',
                     onPressed: () => _handleAddPlant(),
+                  ),
+                ),
+
+                SizedBox(height: AppSpacingSize.m),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showConfirmDeletePlant() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            "Delete Plant",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "Are you sure you want to delete plant? This action can't be undo.",
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actions: [
+            TextButton(onPressed: () => context.pop(), child: Text("Cancel")),
+            TextButton(
+              onPressed: () {
+                context.pop();
+                // _handleDeletePlant();
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: AppColors.danger),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleEditPlant() async {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+    context.pop();
+    setState(() => isLoading = true);
+
+    final deviceId = await SecureStorage.getDeviceId();
+    final homeController = ref.read(homeControllerProvider);
+
+    try {
+      final msg = await homeController.editPlantController(
+        deviceId,
+        nameController.text,
+        plantingWeeks.toInt().toString(),
+        selectedLng,
+        selectedLat,
+        selectedPlace,
+      );
+
+      setState(() {
+        plantName = nameController.text;
+      });
+
+      ref.read(deviceProvider.notifier).setPairedWithPlant(deviceId!);
+      
+      _loadPlantAssistant(deviceId);
+
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Widget _buildEditPlantBottomSheet(BuildContext context, WidgetRef ref) {
+    return StatefulBuilder(
+      builder: (context, setModalState) {
+        return FractionallySizedBox(
+          heightFactor: 0.85,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: AppSpacingSize.l,
+              right: AppSpacingSize.l,
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Edit Plant',
+                            style: TextStyle(
+                              fontWeight: AppFontWeight.semiBold,
+                              fontSize: AppFontSize.l,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacingSize.m),
+
+                          /// Plant Name
+                          TextFormFieldWidget(
+                            controller: nameController,
+                            label: 'Plant Name*',
+                            validator: AppValidator.plantNameRequired,
+                          ),
+                          SizedBox(height: AppSpacingSize.xl),
+
+                          /// Planting Weeks
+                          Text(
+                            'Planting Duration Plan (Week) *',
+                            style: TextStyle(
+                              fontSize: AppFontSize.s,
+                              fontWeight: AppFontWeight.medium,
+                            ),
+                          ),
+                          Slider(
+                            value: plantingWeeks,
+                            min: 1,
+                            max: 60,
+                            divisions: 60,
+                            label: plantingWeeks.round().toString(),
+                            activeColor: AppColors.orange,
+                            onChanged: (v) {
+                              final rounded = v.round().toDouble();
+                              setModalState(() => plantingWeeks = rounded);
+                            },
+                          ),
+
+                          SizedBox(height: AppSpacingSize.m),
+
+                          /// Location Widget (Sudah support lat/lng)
+                          LocationAutoCompleteWidget(
+                            controller: locationController,
+                            validator: AppValidator.locationRequired,
+                            onLatLngSelected: (lat, lng) {
+                              setModalState(() {
+                                selectedLat = lat;
+                                selectedLng = lng;
+                              });
+                            },
+                            onPlaceSelected: (p) {
+                              setModalState(() {
+                                selectedPlace = p.description!;
+                              });
+                            },
+                          ),
+
+                          SizedBox(height: AppSpacingSize.xl),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                /// Save Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ButtonWidget(
+                    text: 'Save Change',
+                    onPressed: () => _handleEditPlant(),
                   ),
                 ),
 
@@ -332,13 +516,66 @@ class _HomePageState extends ConsumerState<HomeScreen> {
                   ],
                 ),
 
-                // TODO: icon EDIT & DELETE PLANT
-                Row(children: [
+                // === Icon Edit & Delete ===
+                Row(
+                  spacing: 8,
+                  children: [
+                    // EDIT
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          showDragHandle: true,
+                          isScrollControlled: true,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(AppRadius.rl),
+                            ),
+                          ),
+                          builder:
+                              (context) =>
+                                  _buildEditPlantBottomSheet(context, ref),
+                        );
+                      },
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.gray, width: 0.7),
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          size: 18,
+                          color: AppColors.gray,
+                        ),
+                      ),
+                    ),
 
+                    // DELETE
+                    GestureDetector(
+                      onTap: () {
+                        _showConfirmDeletePlant();
+                      },
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.danger,
+                        ),
+                        child: const Icon(
+                          Icons.delete,
+                          size: 18,
+                          color: AppColors.white,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,

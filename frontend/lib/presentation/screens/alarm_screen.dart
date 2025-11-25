@@ -419,7 +419,7 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                context.pop();
                 _handleDeleteAlarm(alarm);
               },
               child: const Text("Delete", style: TextStyle(color: AppColors.danger)),

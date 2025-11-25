@@ -58,7 +58,7 @@ func ControlSoil(deviceID string, soilMin, soilMax float64) string {
 }
 
 
-func GetLocation(deviceID string) (string, string) {
+func GetLocation(deviceID string) (string, string, string, string) {
 	return repositories.GetLocation(deviceID)
 }
 

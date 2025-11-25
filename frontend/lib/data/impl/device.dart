@@ -45,6 +45,18 @@ class DeviceImpl implements DeviceRepository {
   }
 
   @override
+  Future<String> editPlantImpl(
+    String? deviceId,
+    String? plantName,
+    String? progressPlan,
+    String? longitude,
+    String? latitude,
+    String? location,
+  ){
+    return api.editPlantApi(deviceId, plantName, progressPlan, longitude, latitude, location);
+  }
+
+  @override
   Future<Map<String, dynamic>> getLocationImpl(String deviceId) {
     return api.getLocationApi(deviceId);
   }

@@ -29,7 +29,7 @@ func HandlePumpControl(c *gin.Context) {
 func GetDeviceLocation(c *gin.Context) {
 	deviceID := c.Param("id")
 
-	loc, err := services.GetLocation(deviceID)
+	loc, long, lat, err := services.GetLocation(deviceID)
 	if err != "" {
 		utils.InternalServerErrorResponse(c, err)
 		return
@@ -37,6 +37,8 @@ func GetDeviceLocation(c *gin.Context) {
 
 	utils.SuccessResponse(c, gin.H{
 		"location": loc,
+		"longitude": long,
+		"latitude": lat,
 	})
 }
 

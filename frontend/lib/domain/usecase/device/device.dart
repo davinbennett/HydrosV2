@@ -23,6 +23,24 @@ class DeviceUsecase {
     );
   }
 
+  Future<String> editPlantUsecase(
+    String? deviceId,
+    String? plantName,
+    String? progressPlan,
+    String? longitude,
+    String? latitude,
+    String? location,
+  ) async {
+    return await repository.editPlantImpl(
+      deviceId,
+      plantName,
+      progressPlan,
+      longitude,
+      latitude,
+      location,
+    );
+  }
+
   Future<Map<String, dynamic>> getLocationUsecase(String deviceId) async {
     return await repository.getLocationImpl(deviceId);
   }
