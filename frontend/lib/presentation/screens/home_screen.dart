@@ -1271,11 +1271,24 @@ class _HomePageState extends ConsumerState<HomeScreen> {
                                 );
                               }),
                             ],
-                          )
+                          ),
                         ],
                       ),
                     ),
                   ),
+
+                  SizedBox(height: AppSpacingSize.l),
+
+                  ButtonAiWidget(
+                    text: 'Reanalyze',
+                    onPressed: () {
+                      context.pop();
+                      _handleAnalyzeAI(temperature, humidity, soil);
+                    },
+                    pngAsset: "lib/assets/images/gemini.png",
+                  ),
+
+                  SizedBox(height: 4),
                 ],
               ),
             ),
