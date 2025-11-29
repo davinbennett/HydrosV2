@@ -4,6 +4,8 @@ import 'package:frontend/core/themes/spacing_size.dart';
 import 'package:frontend/core/themes/font_size.dart';
 import 'package:frontend/core/themes/font_weight.dart';
 
+import '../../../core/themes/colors.dart';
+
 class ButtonAiWidget extends StatelessWidget {
   final String text;
   final IconData? icon;
@@ -29,7 +31,7 @@ class ButtonAiWidget extends StatelessWidget {
     final textWidget = Text(
       text,
       style: TextStyle(
-        color: Colors.white,
+        color: AppColors.white,
         fontWeight: AppFontWeight.semiBold,
         fontSize: AppFontSize.m,
       ),
@@ -37,7 +39,7 @@ class ButtonAiWidget extends StatelessWidget {
 
     final iconWidget =
         icon != null
-            ? Icon(icon, size: AppElementSize.m, color: Colors.white)
+            ? Icon(icon, size: AppElementSize.m, color: AppColors.white)
             : (pngAsset != null
                 ? Image.asset(
                   pngAsset!,
@@ -66,10 +68,8 @@ class ButtonAiWidget extends StatelessWidget {
 
     final gradient = const LinearGradient(
       colors: [
-        Color(0xFF548CC9),
-        Color(0xFF5682C3),
-        Color(0xFF7B7AB6),
-        Color(0xFFCF646C),
+        Colors.deepPurpleAccent,
+        Colors.lightBlueAccent,
       ],
       begin: Alignment.bottomLeft,
       end: Alignment.topRight,

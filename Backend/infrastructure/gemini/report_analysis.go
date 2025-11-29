@@ -9,10 +9,10 @@ import (
 	"google.golang.org/genai"
 )
 
-func GenerateReport(prompt map[string]interface{}) (map[string]any, string){
+func GenerateReport(prompt map[string]any) (map[string]any, string){
 	ctx := context.Background()
 
-	model := "gemini-2.5-flash-preview-05-20"
+	model := "gemini-2.5-pro"
 
 	promptText := fmt.Sprintf(`
         Analyze the following plant irrigation and environmental data:
@@ -26,6 +26,16 @@ func GenerateReport(prompt map[string]interface{}) (map[string]any, string){
         - Pump usage duration: %v minutes
         - Last watered time: %v
         - Measurement timestamp: %v
+
+		Rules:
+		- Do not include any explanation outside JSON
+		- Do not include markdown
+		- Return only valid JSON
+		- Ensure recommendation length is between 3–5 items
+		- Each description field MUST be a maximum of 2 sentences
+		- recommendation.desc MUST be a maximum of 2 sentences
+		- plant_health_desc MUST be a maximum of 2 sentences
+		- soil_ideal_range_desc MUST be a maximum of 2 sentences
 
         Based on this information, return a structured JSON response with the following:
         - soil_ideal_range: Ideal soil moisture range for the plant
@@ -112,14 +122,19 @@ func GenerateReport(prompt map[string]interface{}) (map[string]any, string){
 		configuration,
 	)
 
+	fmt.Println(result)
+
 	if err != nil {
+		
 		return nil, "Failed to connect to AI service. Please try again later."
 	}
 
-	var parsed map[string]interface{}
+	var parsed map[string]any
 	if err := json.Unmarshal([]byte(result.Text()), &parsed); err != nil {
 		return nil, "Failed to process AI response. Please try again later."
 	}
 
+	fmt.Println(parsed)
+	
 	return parsed, ""
 }

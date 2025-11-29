@@ -22,16 +22,20 @@ import 'package:frontend/presentation/controllers/reset_password_controller.dart
 import 'package:frontend/presentation/controllers/signup_controller.dart';
 import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 
+import '../../data/impl/ai.dart';
 import '../../data/impl/alarm.dart';
 import '../../data/impl/pumplog.dart';
 import '../../data/impl/sensor_aggregated.dart';
+import '../../domain/repositories/ai.dart';
 import '../../domain/repositories/alarm.dart';
 import '../../domain/repositories/pumplog.dart';
 import '../../domain/repositories/sensor.dart';
+import '../../domain/usecase/ai.dart';
 import '../../domain/usecase/alarm.dart';
 import '../../domain/usecase/device/device.dart';
 import '../../domain/usecase/pumplog.dart';
 import '../../domain/usecase/sensor_aggregated.dart';
+import '../../infrastructure/api/ai_api.dart';
 import '../../infrastructure/api/alarm_api.dart';
 import '../../infrastructure/api/pumplog_api.dart';
 import '../../infrastructure/api/sensor_aggregated_api.dart';
@@ -54,6 +58,9 @@ final pumplogApiProvider = Provider<PumplogApi>((ref) {
 });
 final sensorAggregatedApiProvider = Provider<SensorAggregatedApi>((ref) {
   return SensorAggregatedApi(ref);
+});
+final aiApiProvider = Provider<AIApi>((ref) {
+  return AIApi(ref);
 });
 
 final firebaseServiceProvider = Provider<GoogleSigninAuthService>((ref) {
@@ -82,8 +89,13 @@ final sensorAggregatedRepositoryProvider = Provider<SensorRepository>((ref) {
   final api = ref.read(sensorAggregatedApiProvider);
   return SensorImpl(api: api);
 });
+final aiRepositoryProvider = Provider<AIRepository>((ref) {
+  final api = ref.read(aiApiProvider);
+  return AIImpl(api: api);
+});
 
-// UseCase
+
+// ! USECASE
 final loginWithEmailUsecaseProvider = Provider<LoginWithEmailUseCase>((ref) {
   final repo = ref.read(authRepositoryProvider);
   return LoginWithEmailUseCase(repo);
@@ -144,6 +156,10 @@ final sensorAggregatedUsecaseProvider = Provider<SensorAggregatedUsecase>((ref) 
 final deviceUsecaseProvider = Provider<DeviceUsecase>((ref) {
   final repo = ref.read(deviceRepositoryProvider);
   return DeviceUsecase(repo);
+});
+final aiUsecaseProvider = Provider<AIUsecase>((ref) {
+  final repo = ref.read(aiRepositoryProvider);
+  return AIUsecase(repo);
 });
 
 
@@ -225,9 +241,11 @@ final historyControllerProvider = Provider<HistoryController>((ref) {
 final homeControllerProvider = Provider<HomeController>((ref) {
   final deviceUsecase = ref.read(deviceUsecaseProvider);
   final pumplogUsecase = ref.read(pumplogUsecaseProvider);
+  final aiUsecase = ref.read(aiUsecaseProvider);
   return HomeController(
     deviceUsecase,
     ref,
-    pumplogUsecase
+    pumplogUsecase,
+    aiUsecase,
   );
 });

@@ -3,14 +3,16 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/domain/usecase/pumplog.dart';
 import 'package:intl/intl.dart';
+import '../../domain/usecase/ai.dart';
 import '../../domain/usecase/device/device.dart';
 
 class HomeController extends StateNotifier<Map<dynamic, dynamic>> {
   final Ref ref;
   final DeviceUsecase deviceUsecase;
   final PumplogUsecase pumplogUsecase;
+  final AIUsecase aiUsecase;
 
-  HomeController(this.deviceUsecase, this.ref, this.pumplogUsecase) : super({});
+  HomeController(this.deviceUsecase, this.ref, this.pumplogUsecase, this.aiUsecase) : super({});
 
   Future<String> addPlantController(
     String? deviceId,
@@ -86,5 +88,34 @@ class HomeController extends StateNotifier<Map<dynamic, dynamic>> {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>> getAiReportController(
+    String? plantName,
+    int? progressPlan,
+    int? progressNow,
+    String? longitude,
+    String? latitude,
+    double? temperature,
+    double? soil,
+    double? humidity,
+    int? pumpUsage,
+    String? lastWatered,
+    String? time,
+  ) async {
+    final data = await aiUsecase.postAiReportUsecase(
+      plantName,
+      progressPlan,
+      progressNow,
+      longitude,
+      latitude,
+      temperature,
+      soil,
+      humidity,
+      pumpUsage,
+      lastWatered,
+      time,
+    );
+    return data;
   }
 }

@@ -17,12 +17,16 @@ import 'package:frontend/presentation/widgets/home/pie_chart.dart';
 import 'package:frontend/presentation/widgets/home/status_indicator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/utils/validator.dart';
 import '../providers/injection.dart';
 import '../providers/websocket/sensor_provider.dart';
 import '../widgets/global/loading.dart';
 import '../widgets/global/text_form_field.dart';
+import '../widgets/home/ai/ai_glow_loader.dart';
+import '../widgets/home/ai/ai_typing_text.dart';
 import '../widgets/home/button_ai.dart';
 import '../widgets/home/google_place.dart';
 
@@ -55,9 +59,11 @@ class _HomePageState extends ConsumerState<HomeScreen> {
   String selectedLat = '';
   String selectedLng = '';
   String plantName = '-';
-  double plantingWeeks = 0;
+  double plantingWeeks = 1;
   String lastWatered = '--:--:--';
   int pumpUsage = 0;
+
+  String locationKey = '';
 
   int currentWeek = 0;
   int totalWeek = 1;
@@ -110,6 +116,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
         selectedLat = data['lat'];
         selectedLng = data['long'];
         selectedPlace = data['location'];
+        locationKey = Uuid().v4();
       });
     } catch (e) {
       if (!mounted) return;
@@ -169,6 +176,43 @@ class _HomePageState extends ConsumerState<HomeScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _handleDeletePlant() async {
+    setState(() => isLoading = true);
+
+    final deviceId = await SecureStorage.getDeviceId();
+
+    setState(() {
+      plantName = '';
+      nameController.text = '';
+      plantingWeeks = 1;
+      selectedLat = '';
+      selectedLng = '';
+      selectedPlace = '';
+      lastWatered = '--:--:--';
+      location = '-';
+      weather = '-';
+      currentWeek = 0;
+      totalWeek = 1;
+      pumpUsage = 0;
+      locationKey = Uuid().v4();
+      locationController = TextEditingController();
+    });
+
+    ref.read(deviceProvider.notifier).setPairedNoPlant(deviceId!);
+
+    SecureStorage.saveHasPlant(false);
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Plant successfully deleted.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Widget _buildAddPlantBottomSheet(BuildContext context, WidgetRef ref) {
@@ -233,6 +277,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
 
                           /// Location Widget (Sudah support lat/lng)
                           LocationAutoCompleteWidget(
+                            key: ValueKey(locationKey),
                             controller: locationController,
                             validator: AppValidator.locationRequired,
                             onLatLngSelected: (lat, lng) {
@@ -293,7 +338,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
             TextButton(
               onPressed: () {
                 context.pop();
-                // _handleDeletePlant();
+                _handleDeletePlant();
               },
               child: const Text(
                 "Delete",
@@ -329,7 +374,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
       });
 
       ref.read(deviceProvider.notifier).setPairedWithPlant(deviceId!);
-      
+
       _loadPlantAssistant(deviceId);
 
       if (!mounted) return;
@@ -454,7 +499,13 @@ class _HomePageState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildUI(DevicePairState state, BuildContext context) {
+  Widget _buildUI(
+    DevicePairState state,
+    BuildContext context,
+    double temperature,
+    double humidity,
+    double soil,
+  ) {
     if (state is PairedNoPlant) {
       return Padding(
         padding: EdgeInsets.all(AppSpacingSize.l),
@@ -565,7 +616,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
                           color: AppColors.danger,
                         ),
                         child: const Icon(
-                          Icons.delete,
+                          Icons.delete_outline,
                           size: 18,
                           color: AppColors.white,
                         ),
@@ -677,7 +728,7 @@ class _HomePageState extends ConsumerState<HomeScreen> {
             ),
             ButtonAiWidget(
               text: 'Analyze',
-              onPressed: () {},
+              onPressed: () => _handleAnalyzeAI(temperature, humidity, soil),
               pngAsset: "lib/assets/images/gemini.png",
             ),
           ],
@@ -685,6 +736,567 @@ class _HomePageState extends ConsumerState<HomeScreen> {
       );
     }
     return const SizedBox.shrink();
+  }
+
+  void _showAiLoading() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.all(AppSpacingSize.l),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [AiGlowLoader(), SizedBox(height: 24), AiTypingText()],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleAnalyzeAI(
+    double temperature,
+    double humidity,
+    double soil,
+  ) async {
+    _showAiLoading();
+
+    try {
+      final homeController = ref.read(homeControllerProvider);
+
+      final result = await homeController.getAiReportController(
+        plantName,
+        totalWeek, // progressPlan
+        currentWeek, // progressNow
+        selectedLng,
+        selectedLat,
+        temperature,
+        soil,
+        humidity,
+        pumpUsage,
+        lastWatered,
+        DateTime.now().toIso8601String(),
+      );
+
+      if (!mounted) return;
+
+      context.pop();
+      _showResultBottomSheet(result, temperature, soil, humidity);
+    } catch (e) {
+      if (!mounted) return;
+
+      context.pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  String _formattedNow() {
+    final now = DateTime.now();
+    return DateFormat("d MMM''yy HH:mm:ss").format(now);
+  }
+
+  void _showResultBottomSheet(
+    Map<String, dynamic> data,
+    double temperature,
+    double humidity,
+    double soil,
+  ) {
+    final mediaQuery = MediaQuery.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.rl)),
+      ),
+      constraints: BoxConstraints(
+        maxHeight: mediaQuery.size.height - mediaQuery.padding.top - 8,
+      ),
+      builder: (_) {
+        final List recommendations = data['recommendation'];
+
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: AppSpacingSize.l,
+              right: AppSpacingSize.l,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // HEADER
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            "lib/assets/images/gemini_color.png", // ganti sesuai path kamu
+                            width: 28,
+                            height: 28,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "AI Plant Analysis",
+                            style: TextStyle(
+                              fontSize: AppFontSize.l,
+                              fontWeight: AppFontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Text(
+                        _formattedNow(),
+                        style: TextStyle(
+                          fontSize: AppFontSize.s,
+                          color: Colors.grey[600],
+                          fontWeight: AppFontWeight.medium,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: AppSpacingSize.l),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.rm),
+                      border: Border.all(
+                        color: AppColors.borderOrange,
+                        width: 0.7,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSpacingSize.l),
+                      child: Column(
+                        spacing: AppSpacingSize.l,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            spacing: AppSpacingSize.xs,
+                            children: [
+                              HugeIcon(
+                                icon: HugeIcons.strokeRoundedPinLocation01,
+                                size: AppElementSize.sm,
+                                color: AppColors.grayMedium,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  location,
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.s,
+                                    color: AppColors.grayMedium,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            spacing: AppSpacingSize.xs,
+                            children: [
+                              HugeIcon(icon: HugeIcons.strokeRoundedPlant01),
+                              Text(
+                                plantName,
+                                style: TextStyle(
+                                  fontSize: AppFontSize.m,
+                                  fontWeight: AppFontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Row(
+                            children: [
+                              // === KOLOM 1 ===
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '$temperature°C',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.l + 2,
+                                          fontWeight: AppFontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Temperature',
+                                      style: TextStyle(fontSize: AppFontSize.s),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '${pumpUsage}x',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.l + 2,
+                                          fontWeight: AppFontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Pump Usage',
+                                      style: TextStyle(fontSize: AppFontSize.s),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              // === KOLOM 2 ===
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '$soil%',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.l + 2,
+                                          fontWeight: AppFontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Soil Moisture',
+                                      style: TextStyle(fontSize: AppFontSize.s),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        lastWatered,
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.l + 2,
+                                          fontWeight: AppFontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Last Watered',
+                                      style: TextStyle(fontSize: AppFontSize.s),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              // === KOLOM 3 ===
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '$humidity%',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.l + 2,
+                                          fontWeight: AppFontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Humidity',
+                                      style: TextStyle(fontSize: AppFontSize.s),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '$currentWeek of $totalWeek',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.l + 2,
+                                          fontWeight: AppFontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Progress (week)',
+                                      style: TextStyle(fontSize: AppFontSize.s),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacingSize.s),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.rm),
+                      border: Border.all(
+                        color: AppColors.borderOrange,
+                        width: 0.7,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSpacingSize.l),
+                      child: Column(
+                        spacing: AppSpacingSize.s,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: AppSpacingSize.xs,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                spacing: AppSpacingSize.xs,
+                                children: [
+                                  HugeIcon(
+                                    icon: HugeIcons.strokeRoundedSoilMoistureField,
+                                  ),
+                                  Text(
+                                    'Soil',
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.l,
+                                      fontWeight: AppFontWeight.semiBold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              RichText(
+                                text: TextSpan(
+                                  style: DefaultTextStyle.of(context).style,
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: 'Ideal Range: ',
+                                      style: TextStyle(
+                                        fontSize: AppFontSize.s,
+                                        // fontWeight: AppFontWeight.medium,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: data['soil_ideal_range'],
+                                      style: TextStyle(
+                                        fontSize: AppFontSize.s,
+                                        fontWeight: AppFontWeight.bold,
+                                        color: AppColors.success
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                data['soil_ideal_range_desc'],
+                                style: TextStyle(
+                                  fontSize: AppFontSize.s,
+                                  color: AppColors.grayMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Divider(color: AppColors.grayDivider),
+
+                          Column(
+                            spacing: AppSpacingSize.xs,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                spacing: AppSpacingSize.xs,
+                                children: [
+                                  HugeIcon(
+                                    icon:
+                                        HugeIcons
+                                            .strokeRoundedHealtcare,
+                                  ),
+                                  Text(
+                                    'Plant Health',
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.l,
+                                      fontWeight: AppFontWeight.semiBold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              RichText(
+                                text: TextSpan(
+                                  style: DefaultTextStyle.of(context).style,
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: 'Status: ',
+                                      style: TextStyle(
+                                        fontSize: AppFontSize.s,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: data['plant_health_status'],
+                                      style: TextStyle(
+                                        fontSize: AppFontSize.s,
+                                        fontWeight: AppFontWeight.bold,
+                                        color: AppColors.success,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              RichText(
+                                text: TextSpan(
+                                  style: DefaultTextStyle.of(context).style,
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: 'Alert: ',
+                                      style: TextStyle(
+                                        fontSize: AppFontSize.s,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: data['plant_health_alert'],
+                                      style: TextStyle(
+                                        fontSize: AppFontSize.s,
+                                        fontWeight: AppFontWeight.bold,
+                                        color: AppColors.orange,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                data['plant_health_desc'],
+                                style: TextStyle(
+                                  fontSize: AppFontSize.s,
+                                  color: AppColors.grayMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+                        
+                          Divider(color: AppColors.grayDivider),
+
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: AppSpacingSize.xs,
+                                children: [
+                                  HugeIcon(icon: HugeIcons.strokeRoundedAiIdea),
+                                  Text(
+                                    'Recommendations',
+                                    style: TextStyle(
+                                      fontSize: AppFontSize.l,
+                                      fontWeight: AppFontWeight.semiBold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: AppSpacingSize.xs),
+
+                              ...recommendations.asMap().entries.map((entry) {
+                                final index = entry.key + 1;
+                                final item = entry.value;
+
+                                return Padding(
+                                  padding: EdgeInsets.only(top: 6, left: 8),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '$index.',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: AppFontSize.m,
+                                        ),
+                                      ),
+
+                                      SizedBox(width: AppFontSize.xs+3),
+
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item['title'],
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(item['desc']),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _infoTile(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(value),
+        ],
+      ),
+    );
   }
 
   @override
@@ -880,9 +1492,9 @@ class _HomePageState extends ConsumerState<HomeScreen> {
                             ),
                             Expanded(
                               child: Text(
-                                'Data updates in real-time.',
+                                'Data is updated in real time and if the connection is green.',
                                 style: TextStyle(
-                                  fontSize: AppFontSize.s,
+                                  fontSize: AppFontSize.xs,
                                   color: AppColors.gray,
                                 ),
                               ),
@@ -955,7 +1567,13 @@ class _HomePageState extends ConsumerState<HomeScreen> {
                               ],
                             ),
                           )
-                          : _buildUI(pairState, context),
+                          : _buildUI(
+                            pairState,
+                            context,
+                            temperature,
+                            humidity,
+                            soil,
+                          ),
                 ),
 
                 SizedBox(height: AppSpacingSize.l),

@@ -871,6 +871,7 @@ class _PumpHistoryItem extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.rm),
         border: Border.all(color: AppColors.borderOrange, width: 0.7),
+        color: AppColors.white
       ),
       child: Row(
         children: [

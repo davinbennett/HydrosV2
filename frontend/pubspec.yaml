@@ -43,6 +43,7 @@ dependencies:
   riverpod_annotation: ^2.6.1
   shared_preferences: ^2.5.3
   syncfusion_flutter_sliders: ^31.2.5
+  uuid: ^4.5.2
   web_socket_channel: ^3.0.3
 
 dev_dependencies:
@@ -66,6 +67,7 @@ flutter:
     - lib/assets/images/home_top.png
     - lib/assets/images/no_plant_add.png
     - lib/assets/images/gemini.png
+    - lib/assets/images/gemini_color.png
     - lib/assets/icons/google.svg
     - .env
   fonts:
