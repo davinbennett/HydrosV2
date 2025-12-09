@@ -3,6 +3,7 @@ import 'package:frontend/domain/usecase/device/pair_device.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/states/device_state.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class PairDeviceController {
   final PairDeviceUsecase pairDeviceUsecase;

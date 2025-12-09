@@ -6,6 +6,7 @@ class SecureStorage {
   static const _keyAccessToken = 'access_token';
   static const _keyUserId = 'user_id';
   static const _keyDeviceId = 'device_id';
+  static const _keyDeviceUid = 'device_uid';
   static const _keyHasPlant = 'hasPlant';
   static const _pairedAt = 'paired_at';
 
@@ -38,6 +39,36 @@ class SecureStorage {
 
   static Future<void> deleteDeviceId() async =>
       await _storage.delete(key: _keyDeviceId);
+
+  // Device UID
+  
+  static Future<void> saveDeviceUId(String deviceUid) async {
+      if (deviceUid.isEmpty) {
+        throw Exception('Device UID tidak boleh kosong');
+      }
+
+      // CEK APAKAH SUDAH ADA
+      final existing = await _storage.read(key: _keyDeviceUid);
+
+      if (existing != null && existing.isNotEmpty) {
+        // Jika sama, tidak perlu overwrite
+        if (existing == deviceUid) {
+          return;
+        }
+
+        // Jika berbeda, overwrite secara aman
+        await _storage.delete(key: _keyDeviceUid);
+      }
+
+      // SIMPAN BARU
+      await _storage.write(key: _keyDeviceUid, value: deviceUid);
+    }
+
+  static Future<String?> getDeviceUId() async =>
+      await _storage.read(key: _keyDeviceUid);
+
+  static Future<void> deleteDeviceUId() async =>
+      await _storage.delete(key: _keyDeviceUid);
 
   // Paired At
   static Future<void> savePairedAt(String time) async =>

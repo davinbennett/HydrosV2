@@ -19,6 +19,9 @@ func InitRoutes(r *gin.Engine) {
 			AiRoutes(protected)
 			SensorAggregateRoutes(protected)
 			AlarmRoute(protected)
+			UserRoute(protected)
+			FcmRoute(protected)
+			NotificationRoutes(protected)
 		}
 	}
 }

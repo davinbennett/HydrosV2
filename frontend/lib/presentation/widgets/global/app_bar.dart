@@ -8,7 +8,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/themes/colors.dart';
 import '../../../infrastructure/websocket/main_websocket.dart';
-import '../../providers/websocket/device_status_provider.dart';
+import '../../providers/notification_provider.dart';
+import 'notif_popup.dart';
 
 enum AppBarType { main, back, withoutNotif }
 
@@ -89,13 +90,60 @@ class AppBarWidget extends ConsumerWidget {
                       ),
                     ),
                     SizedBox(width: AppSpacingSize.s),
-                    GestureDetector(
-                      onTap: onNotificationTap ?? () {},
-                      child: Icon(
-                        Icons.notifications_none_outlined,
-                        size: AppElementSize.m,
-                      ),
-                    ),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final unread =
+                            ref
+                                .watch(notificationProvider.notifier)
+                                .unreadCount;
+
+                        return GestureDetector(
+                          onTap:
+                              onNotificationTap ??
+                              () {
+                                NotificationPopup.show(context);
+                              },
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Icon(
+                                Icons.notifications_none_outlined,
+                                size: AppElementSize.m,
+                              ),
+
+                              // ✅ BADGE MERAH
+                              if (unread > 0)
+                                Positioned(
+                                  right: -2,
+                                  top: -4,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 15,
+                                      minHeight: 15,
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.danger,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        unread > 99 ? "99+" : unread.toString(),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: AppFontWeight.semiBold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    )
+
                   ],
                 ),
               ),

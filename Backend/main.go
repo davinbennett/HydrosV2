@@ -30,6 +30,10 @@ func main() {
         log.Println("✅ Running in Docker, using environment variables from Compose")
     }
 
+	if _, err := config.InitFirebase(); err != nil {
+		log.Fatalf("❌ Firebase Init Failed: %v", err)
+	}
+
 	if err := config.ConnectRedis(); err != nil {
 		log.Fatalf("🔴 Redis connection failed: %v", err)
 	}
@@ -47,6 +51,8 @@ func main() {
 		&models.UserDevice{}, 
 		&models.PumpLog{},
 		&models.SensorAggregate{},
+		&models.Fcm{},
+		&models.Notification{},
 	); err != nil {
 		log.Fatalf("🔴 Migration failed: %v", err)
 	}

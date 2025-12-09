@@ -24,23 +24,36 @@ import 'package:frontend/presentation/controllers/verify_otp_controller.dart';
 
 import '../../data/impl/ai.dart';
 import '../../data/impl/alarm.dart';
+import '../../data/impl/fcm.dart';
+import '../../data/impl/notification.dart';
+import '../../data/impl/profile.dart';
 import '../../data/impl/pumplog.dart';
 import '../../data/impl/sensor_aggregated.dart';
 import '../../domain/repositories/ai.dart';
 import '../../domain/repositories/alarm.dart';
+import '../../domain/repositories/fcm.dart';
+import '../../domain/repositories/notification.dart';
+import '../../domain/repositories/profile.dart';
 import '../../domain/repositories/pumplog.dart';
 import '../../domain/repositories/sensor.dart';
 import '../../domain/usecase/ai.dart';
 import '../../domain/usecase/alarm.dart';
 import '../../domain/usecase/device/device.dart';
+import '../../domain/usecase/fcm.dart';
+import '../../domain/usecase/notification.dart';
+import '../../domain/usecase/profile.dart';
 import '../../domain/usecase/pumplog.dart';
 import '../../domain/usecase/sensor_aggregated.dart';
 import '../../infrastructure/api/ai_api.dart';
 import '../../infrastructure/api/alarm_api.dart';
+import '../../infrastructure/api/fcm_api.dart';
+import '../../infrastructure/api/notification_api.dart';
+import '../../infrastructure/api/profile_api.dart';
 import '../../infrastructure/api/pumplog_api.dart';
 import '../../infrastructure/api/sensor_aggregated_api.dart';
 import '../controllers/alarm_controller.dart';
 import '../controllers/home_controller.dart';
+import '../controllers/profile_controller.dart';
 import '../controllers/service_controller.dart';
 
 // API & Firebase service
@@ -61,6 +74,15 @@ final sensorAggregatedApiProvider = Provider<SensorAggregatedApi>((ref) {
 });
 final aiApiProvider = Provider<AIApi>((ref) {
   return AIApi(ref);
+});
+final profileApiProvider = Provider<ProfileApi>((ref) {
+  return ProfileApi(ref);
+});
+final fcmApiProvider = Provider<FcmApi>((ref) {
+  return FcmApi(ref);
+});
+final notificationApiProvider = Provider<NotificationApi>((ref) {
+  return NotificationApi(ref);
 });
 
 final firebaseServiceProvider = Provider<GoogleSigninAuthService>((ref) {
@@ -92,6 +114,18 @@ final sensorAggregatedRepositoryProvider = Provider<SensorRepository>((ref) {
 final aiRepositoryProvider = Provider<AIRepository>((ref) {
   final api = ref.read(aiApiProvider);
   return AIImpl(api: api);
+});
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  final api = ref.read(profileApiProvider);
+  return ProfileImpl(api: api);
+});
+final fcmRepositoryProvider = Provider<FcmRepository>((ref) {
+  final api = ref.read(fcmApiProvider);
+  return FcmImpl(api: api);
+});
+final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
+  final api = ref.read(notificationApiProvider);
+  return NotificationImpl(api: api);
 });
 
 
@@ -160,6 +194,18 @@ final deviceUsecaseProvider = Provider<DeviceUsecase>((ref) {
 final aiUsecaseProvider = Provider<AIUsecase>((ref) {
   final repo = ref.read(aiRepositoryProvider);
   return AIUsecase(repo);
+});
+final profileUsecaseProvider = Provider<ProfileUsecase>((ref) {
+  final repo = ref.read(profileRepositoryProvider);
+  return ProfileUsecase(repo);
+});
+final fcmUsecaseProvider = Provider<FcmUsecase>((ref) {
+  final repo = ref.read(fcmRepositoryProvider);
+  return FcmUsecase(repo);
+});
+final notificationUsecaseProvider = Provider<NotificationUsecase>((ref) {
+  final repo = ref.read(notificationRepositoryProvider);
+  return NotificationUsecase(repo);
 });
 
 
@@ -247,5 +293,11 @@ final homeControllerProvider = Provider<HomeController>((ref) {
     ref,
     pumplogUsecase,
     aiUsecase,
+  );
+});
+final profileControllerProvider = Provider<ProfileController>((ref) {
+  final profileUsecase = ref.read(profileUsecaseProvider);
+  return ProfileController(
+    profileUsecase: profileUsecase, ref: ref,
   );
 });

@@ -75,3 +75,26 @@ func IsEmailExists(email string) (bool, string) {
 	return true, "This email is already registered."
 }
 
+func GetUserByID(userId string) (*models.User, string) {
+	var user models.User
+
+	err := config.PostgresDB.Where("id = ?", userId).First(&user).Error
+	if err != nil {
+		return nil, "Failed to get data user."
+	}
+
+	return &user, ""
+}
+
+func GetUserIDByDeviceID(deviceID string) (uint, string) {
+	var userDevice models.UserDevice
+
+	if err := config.PostgresDB.
+		Select("user_id").
+		Where("device_id = ?", deviceID).
+		First(&userDevice).Error; err != nil {
+		return 0, "Device not found"
+	}
+
+	return userDevice.UserID, ""
+}

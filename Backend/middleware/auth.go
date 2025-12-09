@@ -45,8 +45,8 @@ func JWTMiddleware() gin.HandlerFunc {
 			if email, ok := claims["email"].(string); ok {
 				c.Set("email", email)
 			}
-			if userID, ok := claims["user_id"].(string); ok {
-				c.Set("user_id", userID)
+			if userID, ok := claims["user_id"].(float64); ok {
+				c.Set("user_id", uint(userID))
 			}
 		} else {
 			utils.UnauthorizedResponse(c, "Invalid token")

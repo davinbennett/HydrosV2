@@ -1,12 +1,20 @@
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:frontend/infrastructure/local/secure_storage.dart';
-// import 'package:frontend/presentation/providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// class ProfileController extends StateNotifier<AuthStatus>{
-//   ProfileController() : super(AuthStatus.authenticated);
-  
-//   Future<void> logout() async {
-//     await SecureStorage.clearAll();
-//     state = AuthStatus.unauthenticated;
-//   }
-// }
+import '../../domain/usecase/profile.dart';
+
+class ProfileController {
+  final ProfileUsecase profileUsecase;
+  final Ref ref;
+
+  ProfileController({required this.profileUsecase, required this.ref});
+
+  Future<Map<String, dynamic>> getProfileController(
+    String userId
+  ) async {
+    final data = await profileUsecase.getProfileUsecase(
+      userId
+    );
+
+    return data;
+  }
+}

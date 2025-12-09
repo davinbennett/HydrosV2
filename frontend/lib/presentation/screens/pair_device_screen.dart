@@ -20,6 +20,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:qr_code_tools/qr_code_tools.dart';
 
+import '../../core/themes/font_size.dart';
+import '../../core/themes/font_weight.dart';
+import '../../core/themes/spacing_size.dart';
+import '../widgets/global/app_bar.dart';
+
 class PairDeviceScreen extends ConsumerStatefulWidget {
   const PairDeviceScreen({super.key});
 
@@ -36,17 +41,85 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
   final DraggableScrollableController sheetController =
       DraggableScrollableController();
 
+  String? pairedAt;
+
   bool isLoading = false;
 
   String? deviceId;
+  
   @override
   void initState() {
     super.initState();
-    SecureStorage.getDeviceId().then((v) {
-      deviceId = v;
-      if (mounted) setState(() {});
-    });
+    _loadDeviceData();
   }
+
+
+  Future<void> _loadDeviceData() async {
+    final v = await SecureStorage.getDeviceId();
+
+    if (!mounted) return;
+
+    setState(() {
+      deviceId = v;
+    });
+
+    final deviceState = ref.read(deviceProvider);
+    final isPaired = deviceState.hasPairedDevice;
+
+    if (isPaired) {
+      final p = await SecureStorage.getPairedAt();
+
+      if (!mounted) return;
+
+      setState(() {
+        pairedAt = p;
+      });
+    }
+  }
+
+  Future<void> _handleUnpair() async {
+    try {
+      setState(() => isLoading = true);
+
+      final id = deviceId;
+
+      await SecureStorage.deletePairedAt();
+      await SecureStorage.deleteDeviceId();
+
+      if (id != null) {
+        ref.read(deviceProvider.notifier).setUnpaired(id);
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        deviceId = null;
+        pairedAt = null;
+        isLoading = false;
+      });
+
+      await DialogWidget.showSuccess(
+        context: context,
+        title: "Device Unpaired",
+        message: "Your device has been successfully unpaired.",
+        onOk: () {
+          context.push('/home');
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to unpair device."),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
 
   Future<void> _handleManualCode(String code) async {
     setState(() => isLoading = true);
@@ -255,9 +328,129 @@ class _PairDeviceScreenState extends ConsumerState<PairDeviceScreen> {
     }
   }
 
-  Widget _pairedUI(BuildContext context, WidgetRef ref, MediaQueryHelper mq) {
-    return Center(child: Text("PAIRED Page"));
+  void _showConfirmUnpairDialog() {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text('Unpair Device', style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "Are you sure you want to unpair this device?\nThis action can't be undo.",
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => context.pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                context.pop();
+                _handleUnpair();
+              },
+              child: const Text(
+                'Unpair',
+                style: TextStyle(color: AppColors.danger),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
+
+
+  Widget _pairedUI(BuildContext context, WidgetRef ref, MediaQueryHelper mq) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              left: AppSpacingSize.l,
+              right: AppSpacingSize.l,
+              top: mq.notchHeight * 1.5,
+              bottom: AppSpacingSize.l,
+            ),
+            child: Column(
+              children: [
+                // ================== CONTENT (SCROLLABLE) ==================
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        AppBarWidget(title: 'Paired', type: AppBarType.main),
+
+                        const SizedBox(height: 32),
+
+                        Text(
+                          'Device ID',
+                          style: TextStyle(
+                            fontSize: AppFontSize.m,
+                            color: AppColors.grayMedium,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          deviceId ?? '-',
+                          style: TextStyle(
+                            fontSize: AppFontSize.l,
+                            fontWeight: AppFontWeight.semiBold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        Text(
+                          'Paired At',
+                          style: TextStyle(
+                            fontSize: AppFontSize.m,
+                            color: AppColors.grayMedium,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          pairedAt ?? '-',
+                          style: TextStyle(
+                            fontSize: AppFontSize.l,
+                            fontWeight: AppFontWeight.semiBold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.link_off, color: AppColors.danger),
+                    label: const Text(
+                      'Unpair Device',
+                      style: TextStyle(color: AppColors.danger),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.danger),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: _showConfirmUnpairDialog,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          if (isLoading) LoadingWidget(),
+        ],
+      ),
+    );
+  }
+
 
   Widget _scanUI(BuildContext context, WidgetRef ref, MediaQueryHelper mq) {
     return Stack(

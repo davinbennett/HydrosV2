@@ -155,13 +155,6 @@ class _AlarmPageState extends ConsumerState<AlarmScreen> {
                               style: TextStyle(fontSize: AppFontSize.s),
                             ),
                           ),
-                          // DropdownMenuItem(
-                          //   value: 3,
-                          //   child: Text(
-                          //     'Weekly',
-                          //     style: TextStyle(fontSize: AppFontSize.s),
-                          //   ),
-                          // ),
                         ],
                       ),
                     ],

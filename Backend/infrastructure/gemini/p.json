@@ -1,0 +1,28 @@
+{
+    "code": 200,
+    "data": {
+        "plant_health_alert": "Severe drought stress detected; immediate intervention required.",
+        "plant_health_desc": "The plant is currently suffering from extreme drought stress, with soil moisture at 0% just one hour after watering. This indicates either severe dehydration or a problem with water delivery/retention.",
+        "plant_health_status": "Critical",
+        "recommendation": [
+            {
+                "desc": "Water the plant immediately and thoroughly until water begins to drain from the pot or saturate the root zone. Monitor soil moisture levels closely for the next few hours to ensure proper absorption.",
+                "title": "Immediate and Thorough Watering"
+            },
+            {
+                "desc": "Verify if the pump is functioning correctly and water is actually reaching the root zone effectively. Check the soil moisture sensor for proper placement and calibration, as a 0% reading after watering is abnormal.",
+                "title": "Inspect Irrigation System and Soil Sensor"
+            },
+            {
+                "desc": "Assess the soil composition for its water retention capabilities. Extremely sandy or poorly structured soil may not hold moisture adequately, requiring amendments to improve water-holding capacity.",
+                "title": "Evaluate Soil Water Retention"
+            },
+            {
+                "desc": "Given the low humidity (30%), consider methods to increase ambient humidity around the plant if it's an indoor plant. This can help reduce transpiration and prevent rapid water loss from the leaves.",
+                "title": "Monitor and Adjust Humidity"
+            }
+        ],
+        "soil_ideal_range": "40-70%",
+        "soil_ideal_range_desc": "Maintaining soil moisture between 40-70% ensures adequate hydration for root development and nutrient uptake. This range prevents both waterlogging and drought stress for most plants."
+    }
+}

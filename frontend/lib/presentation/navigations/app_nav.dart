@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/themes/colors.dart';
-import 'package:frontend/core/utils/logger.dart';
 import 'package:frontend/core/utils/media_query_helper.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/providers/auth_provider.dart';
@@ -11,10 +10,10 @@ import 'package:frontend/presentation/screens/history_screen.dart';
 import 'package:frontend/presentation/screens/home_screen.dart';
 import 'package:frontend/presentation/screens/pair_device_screen.dart';
 import 'package:frontend/presentation/states/auth_state.dart';
-import 'package:frontend/presentation/states/device_state.dart';
 import 'package:go_router/go_router.dart';
 
 import '../screens/alarm_screen.dart';
+import '../screens/profile_screen.dart';
 import '../screens/service_screen.dart';
 
 class BottomNavBar extends ConsumerStatefulWidget {
@@ -58,7 +57,7 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
       icon: Icons.account_circle_outlined,
       activeIcon: Icons.account_circle,
       label: "Profile",
-      page: Center(child: Text("Profile Page")),
+      page: ProfileScreen(),
     ),
   ];
 
@@ -173,7 +172,7 @@ final appRoutes = <GoRoute>[
   GoRoute(
     name: 'profile',
     path: '/profile',
-    builder: (context, state) => const BottomNavBar(),
+    builder: (context, state) => ProfileScreen(),
   ),
   GoRoute(
     name: 'pair-device',

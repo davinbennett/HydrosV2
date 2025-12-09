@@ -68,7 +68,9 @@ final mainRouterProvider = Provider<GoRouter>((ref) {
 
       // Jika sudah login
       if (data is AuthAuthenticated) {
-        if (isSplash || isLogin || isSignup) return '/home';
+        if (isSplash || isLogin || isSignup) {
+          return '/home';
+        }
         return null;
       }
 

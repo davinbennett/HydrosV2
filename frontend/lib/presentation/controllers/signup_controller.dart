@@ -3,6 +3,7 @@ import 'package:frontend/domain/usecase/auth/register_with_email.dart';
 import 'package:frontend/domain/usecase/auth/signup.dart';
 import 'package:frontend/infrastructure/local/secure_storage.dart';
 import 'package:frontend/presentation/states/auth_state.dart';
+import 'package:uuid/uuid.dart';
 
 class SignupController {
   final SignupUseCase signupUsecase;
@@ -43,8 +44,12 @@ class RegisterWithEmailController {
         return AuthFailure('Invalid access token or user ID');
       }
 
+      final uuid = const Uuid().v4();
+      final appUid = 'app-$uuid';
+
       await SecureStorage.saveAccessToken(result.accessToken);
       await SecureStorage.saveUserId(result.userId.toString());
+      await SecureStorage.saveDeviceUId(appUid);
 
       return AuthAuthenticated(result);
     } catch (e) {

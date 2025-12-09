@@ -6,10 +6,11 @@ import (
 	"log"
 	"time"
 
-	// "main/config"
-
 	"main/config"
+	"main/infrastructure/fcm"
+	"main/models"
 	"main/repositories"
+	"main/utils"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -71,12 +72,12 @@ func handleDeviceStatus(client mqtt.Client, msg mqtt.Message) string {
 
 	// Simpan ke global map
 	SetDeviceStatus(data.DeviceID, DeviceStatus(data.Status))
-	
+
 	wsPayload := map[string]any{
 		"type":      "device_status",
 		"device_id": data.DeviceID,
 		"data": map[string]any{
-			"status":    data.Status,
+			"status": data.Status,
 		},
 	}
 
@@ -120,9 +121,9 @@ func handleSensorData(client mqtt.Client, msg mqtt.Message) string {
 		"type":      "sensor",
 		"device_id": data.DeviceID,
 		"data": map[string]any{
-			"temperature":   data.Temperature,
-			"humidity":      data.Humidity,
-			"soil": data.SoilMoisture,
+			"temperature": data.Temperature,
+			"humidity":    data.Humidity,
+			"soil":        data.SoilMoisture,
 		},
 	}
 
@@ -174,6 +175,12 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 		return ""
 	}
 
+	// 🔽 AMBIL USER ID DARI DEVICE
+	userID, errUser := repositories.GetUserIDByDeviceID(data.DeviceID)
+	if errUser != "" {
+		log.Printf("[DB] Failed to get userID: %v", errUser)
+	}
+
 	// ---- Update DB ----
 	switch data.PumpStatus {
 	case 1:
@@ -188,6 +195,41 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 			log.Printf("[DB] Failed to update device status: %v", err)
 		}
 
+		// ✅ SEND FCM: POMPA ON
+		if errUser == "" {
+			sourceTitle, sourceDesc := utils.GetPumpControlSource(data.ControlBy)
+
+			title := "🚿 Pump Activated " + sourceTitle
+			body  := "Pump has been turned ON. " + sourceDesc
+
+			// 1. SIMPAN KE DATABASE NOTIFICATION
+			notif := models.Notification{
+				UserID:   userID,
+				DeviceID: data.DeviceID,
+				Title:    title,
+				Body:     body,
+				Type:     "pump_on",
+			}
+
+			notifID, err := repositories.CreateNotification(&notif)
+			if err != "" {
+				log.Println("❌ Failed to create notification:", err)
+			}
+
+			// 2. KIRIM FCM
+			go fcm.SendFCMToUser(
+				userID,
+				title,
+				body,
+				map[string]string{
+					"type":        "pump_on",
+					"device_id":  data.DeviceID,
+					"control_by": fmt.Sprintf("%d", data.ControlBy),
+					"notification_id": fmt.Sprintf("%d", notifID),
+				},
+			)
+		}
+
 	case 2:
 		// Pompa OFF → update PumpLog terakhir
 		err := repositories.UpdatePumpLog(data.DeviceID, data.SoilValue, t)
@@ -199,6 +241,43 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 		if err := repositories.UpdatePumpStatus(data.DeviceID, false); err != "" {
 			log.Printf("[DB] Failed to update device status: %v", err)
 		}
+
+		// ✅ SEND FCM: POMPA OFF
+		userID, errUser := repositories.GetUserIDByDeviceID(data.DeviceID)
+		if errUser == "" {
+			sourceTitle, sourceDesc := utils.GetPumpControlSource(data.ControlBy)
+
+			title := "⛔ Pump Stopped " + sourceTitle
+			body := "Pump has been turned OFF. " + sourceDesc
+
+			// 1. SIMPAN KE DATABASE NOTIFICATION
+			notif := models.Notification{
+				UserID:   userID,
+				DeviceID: data.DeviceID,
+				Title:    title,
+				Body:     body,
+				Type:     "pump_off",
+			}
+
+			notifID, err := repositories.CreateNotification(&notif)
+			if err != "" {
+				log.Println("❌ Failed to create notification:", err)
+			}
+
+			// 2. KIRIM FCM
+			go fcm.SendFCMToUser(
+				userID,
+				title,
+				body,
+				map[string]string{
+					"type":        "pump_off",
+					"device_id":  data.DeviceID,
+					"control_by": fmt.Sprintf("%d", data.ControlBy),
+					"notification_id": fmt.Sprintf("%d", notifID),
+				},
+			)
+		}
+
 	}
 
 	// ! SEND TO WS
@@ -224,8 +303,8 @@ func handlePumpStatus(client mqtt.Client, msg mqtt.Message) string {
 
 func handleDeleteAlarm(client mqtt.Client, msg mqtt.Message) string {
 	var data struct {
-		DeviceID   string  `json:"device_id"`
-		AlarmID string `json:"alarm_id"`
+		DeviceID string `json:"device_id"`
+		AlarmID  string `json:"alarm_id"`
 	}
 
 	// Unmarshal JSON ke struct
@@ -246,7 +325,7 @@ func handleDeleteAlarm(client mqtt.Client, msg mqtt.Message) string {
 		"device_id": data.DeviceID,
 		"data": map[string]any{
 			"alarm_id":   data.AlarmID,
-			"is_enabled":   false,
+			"is_enabled": false,
 		},
 	}
 
@@ -257,7 +336,6 @@ func handleDeleteAlarm(client mqtt.Client, msg mqtt.Message) string {
 
 	log.Printf("WS > is enable > jsonMsg:%s\n", jsonMsg)
 	config.Broadcast <- jsonMsg
-
 
 	return ""
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/themes/element_size.dart';
 import 'package:frontend/core/themes/radius_size.dart';
@@ -81,22 +82,50 @@ class _HomePageState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final mq = MediaQuery.of(context);
+
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+          systemNavigationBarColor:
+              mq.orientation == Orientation.portrait
+                  ? AppColors.primary
+                  : AppColors.white,
+          systemNavigationBarIconBrightness: Brightness.dark,
+          statusBarColor: Colors.transparent,
+        ),
+      );
+    });
+
     Future.microtask(() async {
-      deviceId = await SecureStorage.getDeviceId();
+      try {
+        deviceId = await SecureStorage.getDeviceId();
+        final hasPlant = await SecureStorage.getHasPlant();
 
-      final hasPlant = await SecureStorage.getHasPlant();
+        if (!mounted) return;
 
-      if (hasPlant) {
-        ref.read(deviceProvider.notifier).setPairedWithPlant(deviceId!);
+        if (deviceId == null) {
+          setState(() => isLoadingInit = false);
+          return;
+        }
 
-        _loadPlantAssistant(deviceId!);
-      } else if (!hasPlant) {
-        ref.read(deviceProvider.notifier).setPairedNoPlant(deviceId!);
+        if (hasPlant) {
+          ref.read(deviceProvider.notifier).setPairedWithPlant(deviceId!);
+
+          await _loadPlantAssistant(deviceId!);
+        } else {
+          ref.read(deviceProvider.notifier).setPairedNoPlant(deviceId!);
+        }
+      } catch (e) {
+        debugPrint("INIT ERROR: $e");
+      } finally {
+        if (mounted) {
+          setState(() => isLoadingInit = false);
+        }
       }
-
-      setState(() => isLoadingInit = false);
     });
   }
+
 
   Future<void> _loadPlantAssistant(String deviceId) async {
     try {
@@ -1295,20 +1324,6 @@ class _HomePageState extends ConsumerState<HomeScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _infoTile(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(value),
-        ],
-      ),
     );
   }
 
