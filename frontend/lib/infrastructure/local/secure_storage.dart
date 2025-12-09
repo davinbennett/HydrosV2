@@ -9,8 +9,9 @@ class SecureStorage {
   static const _keyDeviceUid = 'device_uid';
   static const _keyHasPlant = 'hasPlant';
   static const _pairedAt = 'paired_at';
+  static const _keyIsNotifOn = 'is_notif_on';
 
-  // Access Token
+  // Access Token 
   static Future<void> saveAccessToken(String token) async =>
       await _storage.write(key: _keyAccessToken, value: token);
 
@@ -19,6 +20,23 @@ class SecureStorage {
 
   static Future<void> deleteAccessToken() async =>
       await _storage.delete(key: _keyAccessToken);
+
+  // SAVE NOTIF
+  static Future<void> saveIsNotifOn(bool value) async {
+    await _storage.write(key: _keyIsNotifOn, value: value ? "1" : "0");
+  }
+
+  // GET NOTIF
+  static Future<bool> getIsNotifOn() async {
+    final result = await _storage.read(key: _keyIsNotifOn);
+    return result == "1"; // default ON jika belum ada
+  }
+
+  // DELETE NOTIF
+  static Future<void> deleteIsNotifOn() async {
+    await _storage.delete(key: _keyIsNotifOn);
+  }
+
 
   // User ID
   static Future<void> saveUserId(String userId) async =>

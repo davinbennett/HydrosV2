@@ -6,6 +6,7 @@ import '../../infrastructure/fcm/main.dart';
 import '../../infrastructure/local_notification/localnotif_main.dart';
 import '../states/notification_state.dart';
 import 'injection.dart';
+import 'notif_setting.dart';
 
 final notificationProvider =
     StateNotifierProvider<NotificationNotifier, NotificationState>(
@@ -24,19 +25,20 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     return state.listNotification.where((n) => n["is_read"] == false).length;
   }
 
-
   // REALTIME FCM → STATE (TANPA HIT API)
   void _initFCMListener() {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      // ✅ CEK DULU SETTING NOTIF
+      final isNotifOn = ref.read(notificationSettingProvider);
+
+      if (!isNotifOn) {
+        logger.w("🔕 Notif blocked by user setting");
+        return; // ⛔ STOP TOTAL
+      }
+
       // 1. TAMPILKAN LOCAL NOTIFIKASI
       final notif = message.notification;
       if (notif != null) {
-          logger.i("FCM MASUK ✅");
-          logger.i("TITLE: ${notif.title}");
-          logger.i("BODY: ${notif.body}");
-          logger.i("DATA: ${message.data}");
-
-
         LocalNotificationService.showInstant(
           title: notif.title ?? 'Hydros',
           body: notif.body ?? '',
@@ -44,7 +46,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
         );
       }
 
-      // 2. ✅ MASUKKAN LANGSUNG KE STATE POPUP
+      // 2. ✅ MASUKKAN KE STATE
       insertFromFCM(message);
     });
   }
@@ -79,8 +81,6 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     }
   }
 
-
-
   /// ✅ MARK AS READ
   Future<void> readNotification(int id) async {
     final api = ref.read(notificationApiProvider);
@@ -108,7 +108,6 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
 
     state = state.copyWith(listNotification: updated);
   }
-
 
   /// ✅ CLEAR ALL (LOGOUT / UNPAIR)
   void clearAll() {
@@ -171,6 +170,4 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     final updated = [newNotif, ...state.listNotification];
     state = state.copyWith(listNotification: updated);
   }
-
-
 }

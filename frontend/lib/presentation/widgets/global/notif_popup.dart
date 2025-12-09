@@ -114,73 +114,71 @@ class _PopupContent extends ConsumerWidget {
                   padding: EdgeInsets.only(top: AppSpacingSize.l),
                   child: Center(child: Text("No Notification")),
                 )
-                : Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: list.length,
-                    itemBuilder: (context, i) {
-                      final item = list[i];
-
-                      final notifId = getNotifId(item);
-                      final title = getNotifTitle(item);
-                      final body = getNotifBody(item);
-                      final isRead = getNotifIsRead(item);
-                      final timeText = formatNotifTime(item["created_at"]);
-
-                      return Dismissible(
-                        key: ValueKey<int>(getNotifId(item)),
-                        direction: DismissDirection.endToStart,
-                        confirmDismiss: (_) async {
-                          final id = getNotifId(item);
-                          notifier.removeFromLocal(id);
-                          await notifier.deleteNotification(id);
-                          return true;
-                        },
-
-                        background: Container(
-                          padding: EdgeInsets.only(right: 20),
-                          alignment: Alignment.centerRight,
-                          color: Colors.red,
-                          child: Icon(Icons.delete, color: Colors.white),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 4),
-                          child: ListTile(
-                            onTap: () {
-                              notifier.readNotification(notifId);
-                            },
-                            leading: Icon(
-                              isRead
-                                  ? Icons.notifications
-                                  : Icons.notifications_active,
-                              color: isRead ? Colors.grey : Colors.orange,
+                : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: list.length,
+                  itemBuilder: (context, i) {
+                    final item = list[i];
+                
+                    final notifId = getNotifId(item);
+                    final title = getNotifTitle(item);
+                    final body = getNotifBody(item);
+                    final isRead = getNotifIsRead(item);
+                    final timeText = formatNotifTime(item["created_at"]);
+                
+                    return Dismissible(
+                      key: ValueKey<int>(getNotifId(item)),
+                      direction: DismissDirection.endToStart,
+                      confirmDismiss: (_) async {
+                        final id = getNotifId(item);
+                        notifier.removeFromLocal(id);
+                        await notifier.deleteNotification(id);
+                        return true;
+                      },
+                
+                      background: Container(
+                        padding: EdgeInsets.only(right: 20),
+                        alignment: Alignment.centerRight,
+                        color: Colors.red,
+                        child: Icon(Icons.delete, color: Colors.white),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: ListTile(
+                          onTap: () {
+                            notifier.readNotification(notifId);
+                          },
+                          leading: Icon(
+                            isRead
+                                ? Icons.notifications
+                                : Icons.notifications_active,
+                            color: isRead ? Colors.grey : Colors.orange,
+                          ),
+                          title: Text(
+                            title,
+                            style: TextStyle(
+                              fontWeight:
+                                  isRead
+                                      ? AppFontWeight.normal
+                                      : AppFontWeight.semiBold,
+                              fontSize: AppFontSize.m,
                             ),
-                            title: Text(
-                              title,
-                              style: TextStyle(
-                                fontWeight:
-                                    isRead
-                                        ? AppFontWeight.normal
-                                        : AppFontWeight.semiBold,
-                                fontSize: AppFontSize.m,
-                              ),
-                            ),
-                            subtitle: Text(
-                              body,
-                              style: TextStyle(fontSize: AppFontSize.s),
-                            ),
-                            trailing: Text(
-                              timeText,
-                              style: TextStyle(
-                                fontSize: AppFontSize.xs,
-                                color: Colors.grey,
-                              ),
+                          ),
+                          subtitle: Text(
+                            body,
+                            style: TextStyle(fontSize: AppFontSize.s),
+                          ),
+                          trailing: Text(
+                            timeText,
+                            style: TextStyle(
+                              fontSize: AppFontSize.xs,
+                              color: Colors.grey,
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
       ),
     );

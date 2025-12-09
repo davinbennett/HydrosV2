@@ -12,11 +12,12 @@ import '../../core/themes/font_weight.dart';
 import '../../core/themes/radius_size.dart';
 import '../../core/themes/spacing_size.dart';
 import '../providers/injection.dart';
+import '../providers/notif_setting.dart';
 import '../widgets/global/app_bar.dart';
 import '../widgets/global/dialog.dart';
 import '../widgets/global/loading.dart';
 
-  class ProfileScreen extends ConsumerStatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
@@ -30,7 +31,7 @@ class _ProfilePageState extends ConsumerState<ProfileScreen> {
   String profilePictureUrl = '';
   String username = '-';
   String email = '-';
-  
+
   @override
   void initState() {
     super.initState();
@@ -51,9 +52,7 @@ class _ProfilePageState extends ConsumerState<ProfileScreen> {
     final profileController = ref.read(profileControllerProvider);
 
     try {
-      final result = await profileController.getProfileController(
-        userId
-      );
+      final result = await profileController.getProfileController(userId);
 
       final pprofilePictureUrl = result['profile_picture'];
       final uusername = result['username'];
@@ -98,8 +97,7 @@ class _ProfilePageState extends ConsumerState<ProfileScreen> {
         context: context,
         title: "Logout Success",
         message: "You have been logged out.",
-        onOk: () {
-        },
+        onOk: () {},
       );
     } catch (e) {
       if (!mounted) return;
@@ -124,9 +122,7 @@ class _ProfilePageState extends ConsumerState<ProfileScreen> {
             'Logout',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: const Text(
-            "Are you sure you want to logout?",
-          ),
+          content: const Text("Are you sure you want to logout?"),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -157,7 +153,7 @@ class _ProfilePageState extends ConsumerState<ProfileScreen> {
     final deviceState = ref.watch(deviceProvider);
 
     final pairState = deviceState.activePairState;
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -245,7 +241,7 @@ class _ProfilePageState extends ConsumerState<ProfileScreen> {
                           username,
                           style: TextStyle(
                             fontSize: AppFontSize.m,
-                            fontWeight: AppFontWeight.semiBold
+                            fontWeight: AppFontWeight.semiBold,
                           ),
                         ),
 
@@ -256,6 +252,68 @@ class _ProfilePageState extends ConsumerState<ProfileScreen> {
                           style: TextStyle(
                             fontSize: AppFontSize.s,
                             color: Colors.grey,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Container(
+                          margin: const EdgeInsets.only(top: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white, // ✅ background putih
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.rl,
+                            ), // ✅ radius sesuai theme
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final isNotifOn = ref.watch(
+                                notificationSettingProvider,
+                              );
+
+                              return Row(
+                                children: [
+                                  const Icon(
+                                    Icons.notifications_active_outlined,
+                                  ),
+                                  const SizedBox(width: 12),
+
+                                  Expanded(
+                                    child: Text(
+                                      "Notification",
+                                      style: TextStyle(
+                                        fontWeight: AppFontWeight.medium,
+                                        fontSize: AppFontSize.m,
+                                      ),
+                                    ),
+                                  ),
+
+                                  Switch(
+                                    value: isNotifOn,
+                                    onChanged: (value) {
+                                      ref
+                                          .read(
+                                            notificationSettingProvider
+                                                .notifier,
+                                          )
+                                          .toggle(value);
+                                    },
+                                    activeThumbColor: AppColors.orange,
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ],

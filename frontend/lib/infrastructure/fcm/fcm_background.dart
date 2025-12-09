@@ -1,11 +1,22 @@
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-import '../../core/utils/logger.dart';
+import '../local/secure_storage.dart';
+import '../local_notification/localnotif_main.dart';
 
-@pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  logger.i("✅ BACKGROUND FCM MASUK");
-  logger.i("TITLE: ${message.notification?.title}");
-  logger.i("BODY: ${message.notification?.body}");
+  final isNotifOn = await SecureStorage.getIsNotifOn();
+
+  if (!isNotifOn) {
+    return; // ⛔ BENAR-BENAR DIBLOCK
+  }
+
+  final notif = message.notification;
+  if (notif != null) {
+    await LocalNotificationService.showInstant(
+      title: notif.title ?? 'Hydros',
+      body: notif.body ?? '',
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    );
+  }
 }
