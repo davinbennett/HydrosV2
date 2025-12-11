@@ -4,20 +4,34 @@
 FROM golang:1.25.3-alpine AS builder
 WORKDIR /app
 
-# Timezone
-RUN apk --no-cache add ca-certificates tzdata && \
-    ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime && \
-    echo "Asia/Jakarta" > /etc/timezone
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
 
-# COPY binary dari builder
-COPY --from=builder /app/hydros-backend .
+# Copy all source
+COPY . .
 
-# ✔️ COPY folder config ke dalam image
-COPY config ./config
+# Build binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hydros-backend ./main.go
+
+
+# -------- Stage 2: Runner --------
+FROM alpine:3.19
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/hydros-backend /app/hydros-backend
+
+# Copy config folder (termasuk firebase service account JSON)
+COPY config /app/config
+
+# Allow binary execution
+RUN chmod +x /app/hydros-backend
 
 EXPOSE 8081
 
-CMD ["./hydros-backend"]
+CMD ["/app/hydros-backend"]
 
 
 
