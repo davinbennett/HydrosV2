@@ -6,7 +6,9 @@ class GoogleSigninAuthService {
 
   Future<String> signInWithGoogle() async {
     try {
-      await _googleSignIn.initialize(clientId: dotenv.env['WEB_CLIENT_ID']);
+      await _googleSignIn.initialize(
+        serverClientId: dotenv.env['WEB_CLIENT_ID'],
+      );
 
       final account = await _googleSignIn.authenticate();
 
