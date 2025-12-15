@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log"
 	"main/utils"
 	"os"
 	"strings"
@@ -13,6 +14,7 @@ import (
 func JWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		log.Printf("DEBUG Authorization Header: [%s]\n", authHeader)
 		if authHeader == "" {
 			utils.UnauthorizedResponse(c, "Authorization header is required")
 			c.Abort()
@@ -20,7 +22,7 @@ func JWTMiddleware() gin.HandlerFunc {
 		}
 
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			utils.UnauthorizedResponse(c, "Header: "+authHeader)
+			utils.UnauthorizedResponse(c, "Invalid token format")
 			c.Abort()
 			return
 		}
