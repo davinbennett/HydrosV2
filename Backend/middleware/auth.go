@@ -20,7 +20,7 @@ func JWTMiddleware() gin.HandlerFunc {
 		}
 
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			utils.UnauthorizedResponse(c, "Invalid token format")
+			utils.UnauthorizedResponse(c, "Header: "+authHeader)
 			c.Abort()
 			return
 		}
