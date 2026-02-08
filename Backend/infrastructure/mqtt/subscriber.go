@@ -49,6 +49,7 @@ func SubscribeTopics(client mqtt.Client, deviceID string) string {
 
 	for topic, handler := range topics {
 		if token := client.Subscribe(topic, 1, handler); token.Wait() && token.Error() != nil {
+			log.Println("[MQTT] ERROR subscribing to topic:", token.Error())
 			return "Failed to subscribe to MQTT topic. Please try again later."
 		}
 	}

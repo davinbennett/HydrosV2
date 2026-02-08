@@ -1080,7 +1080,22 @@ void loop()
 
   if (millis() - lastSensorMillis >= sensorInterval)
   {
-    readSensors();
+    float humidity = dht.readHumidity();
+    float moisture = analogRead(soil);
+    float temperature = dht.readTemperature();
+
+    if (isnan(humidity) || isnan(temperature))
+    {
+      humidity = 0.0;
+      temperature = 0.0;
+    }
+
+    float moisturePercent = map(moisture, 1800, 3400, 100, 0);
+    moisturePercent = constrain(moisturePercent, 0, 100);
+
+    currentHumidity = humidity;
+    currentTemperature = temperature;
+    currentMoisturePercent = moisturePercent;
 
     lastSensorMillis = millis();
   }

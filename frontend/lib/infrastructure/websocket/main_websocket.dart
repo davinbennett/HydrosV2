@@ -20,7 +20,7 @@ Timer? _pingTimer;
 bool _connecting = false;
 int _retryCount = 0;
 
-final websocketUrl = dotenv.env['WEBSOCKET_URL'];
+final websocketUrl = dotenv.env['WEBSOCKET_URL']?.trim();
 
 Future<void> initWebsocket(Ref ref) async {
   final deviceId = await SecureStorage.getDeviceId();
