@@ -31,7 +31,7 @@ class LocalNotificationService {
     await _notification.show(id, title, body, notifDetails);
   }
 
-  /// NOTIFIKASI TERJADWAL (SUDAH API BARU v17+)
+  /// NOTIFIKASI TERJADWAL 
   static Future<void> schedule({
     required int id,
     required String title,

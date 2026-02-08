@@ -8,7 +8,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final isNotifOn = await SecureStorage.getIsNotifOn();
 
   if (!isNotifOn) {
-    return; // ⛔ BENAR-BENAR DIBLOCK
+    return; 
   }
 
   final notif = message.notification;
