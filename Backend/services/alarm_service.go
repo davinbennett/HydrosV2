@@ -23,7 +23,7 @@ func GetDeviceAlarms(deviceID string) (map[string]any, string) {
 			return t1.Hour() < t2.Hour()
 		}
 		return t1.Minute() < t2.Minute()
-	})fffff
+	})fffff dddddfgggg
 
 	now := time.Now()
 	var nextAlarm *time.Time
